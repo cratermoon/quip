@@ -25,5 +25,6 @@ func main() {
 	}
 	fmt.Println(quip)
 	svc.Setup()
+	svc.TimeSetup()
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
