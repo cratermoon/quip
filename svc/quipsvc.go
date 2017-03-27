@@ -3,15 +3,20 @@ package svc
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"net/http"
 
 	"github.com/cratermoon/quip/quipdb"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/go-kit/kit/metrics"
+	"github.com/go-kit/kit/metrics/expvar"
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
-// QuipService provides a quip server
+var quipsServed metrics.Counter
+var quipLatency metrics.Histogram
+
 type QuipService interface {
 	GetQuip() (string, error)
 	CountQuips() (int64, error)
@@ -22,7 +27,14 @@ type quipService struct {
 }
 
 func (q quipService) GetQuip() (string, error) {
-	return q.repo.Quip()
+	quipsServed.Add(1)
+	begin := time.Now()
+	quip, err := q.repo.Quip()
+	if err != nil {
+		return "", err
+	}
+	quipLatency.Observe(time.Since(begin).Seconds())
+	return quip, nil
 }
 
 func (q quipService) CountQuips() (int64, error) {
@@ -66,6 +78,9 @@ func makeGetQuipEndpont(qs QuipService) endpoint.Endpoint {
 
 // Setup initializes the QuipService
 func Setup() {
+
+	quipsServed = expvar.NewCounter("quips_served")
+	quipLatency = expvar.NewHistogram("quip_quickness", 50)
 
 	svc := quipService{quipdb.NewQuipRepo()}
 
