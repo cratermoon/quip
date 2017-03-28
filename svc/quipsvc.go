@@ -3,6 +3,7 @@ package svc
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"net/http"
@@ -27,12 +28,12 @@ type quipService struct {
 }
 
 func (q quipService) GetQuip() (string, error) {
-	quipsServed.Add(1)
 	begin := time.Now()
 	quip, err := q.repo.Quip()
 	if err != nil {
-		return "", err
+		return "Ponder nothingness", err
 	}
+	quipsServed.Add(1)
 	quipLatency.Observe(time.Since(begin).Seconds())
 	return quip, nil
 }
@@ -59,7 +60,7 @@ func makeCountEndpoint(qs QuipService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		c, err := qs.CountQuips()
 		if err != nil {
-			return countResponse{c, err.Error()}, err
+			return countResponse{c, fmt.Sprintf("The Wisdom Service is unavailable: %s", err)}, nil
 		}
 		return countResponse{c, ""}, nil
 	}
@@ -69,7 +70,7 @@ func makeGetQuipEndpont(qs QuipService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		q, err := qs.GetQuip()
 		if err != nil {
-			return getquipResponse{q, err.Error()}, err
+			return getquipResponse{q, fmt.Sprintf("The Wisdom Service is unavailable: %s", err)}, nil
 		}
 		return getquipResponse{q, ""}, nil
 	}
@@ -79,10 +80,16 @@ func makeGetQuipEndpont(qs QuipService) endpoint.Endpoint {
 // Setup initializes the QuipService
 func Setup() {
 
+	r, err := quipdb.NewQuipRepo()
+
+	if err != nil {
+		return
+	}
+
+	svc := quipService{r}
+
 	quipsServed = expvar.NewCounter("quips_served")
 	quipLatency = expvar.NewHistogram("quip_quickness", 50)
-
-	svc := quipService{quipdb.NewQuipRepo()}
 
 	quiphandler := httptransport.NewServer(
 		makeGetQuipEndpont(svc),

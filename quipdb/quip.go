@@ -1,7 +1,7 @@
 package quipdb
 
 import (
-	"fmt"
+	"errors"
 	"math/rand"
 	"strings"
 	"time"
@@ -16,23 +16,6 @@ import (
 //QuipRepo generates short, witty, quips from a repository
 type QuipRepo struct {
 	sdb *simpledb.SimpleDB
-}
-
-func listDomains(sdb *simpledb.SimpleDB) {
-
-	params := &simpledb.ListDomainsInput{
-		MaxNumberOfDomains: aws.Int64(4),
-		NextToken:          aws.String("String"),
-	}
-	resp, err := sdb.ListDomains(params)
-
-	if err != nil {
-		// Print the error, cast err to awserr.Error to get the Code and
-		// Message from an error.
-		fmt.Println(err.Error())
-	}
-
-	fmt.Println(resp)
 }
 
 func countQuips(sdb *simpledb.SimpleDB) (int64, error) {
@@ -54,13 +37,10 @@ func getQuip(sdb *simpledb.SimpleDB) (string, error) {
 	resp, err := sdb.Select(params)
 
 	if err != nil {
-		// Print the error, cast err to awserr.Error to get the Code and
-		// Message from an error.
-		fmt.Println(err.Error())
-		return "", err
+		return "Experience tranquility", err
 	}
 	if len(resp.Items) == 0 {
-		return "woops", nil
+		return "", errors.New("Experience tranquility")
 	}
 	i := rand.Intn(len(resp.Items) - 1)
 	return strings.TrimSpace(*resp.Items[i].Attributes[0].Value), nil
@@ -71,19 +51,24 @@ func (q QuipRepo) Quip() (string, error) {
 	return getQuip(q.sdb)
 }
 
+// Count returns the number of quips available in the repo
 func (q QuipRepo) Count() (int64, error) {
 	return countQuips(q.sdb)
 }
 
 // NewQuipRepo returns a new quip repository
-func NewQuipRepo() QuipRepo {
+func NewQuipRepo() (QuipRepo, error) {
 	rand.Seed(time.Now().UnixNano() * int64(os.Getpid()))
 
-	sdb := simpledb.New(
-		session.Must(session.NewSessionWithOptions(
-			session.Options{SharedConfigState: session.SharedConfigEnable}),
-		),
-	)
+	s, err := session.NewSessionWithOptions(session.Options{Profile: "cmdev", SharedConfigState: session.SharedConfigEnable})
 
-	return QuipRepo{sdb}
+	var qr QuipRepo
+
+	if err != nil {
+		return qr, err
+	}
+
+	sdb := simpledb.New(s)
+	qr = QuipRepo{sdb}
+	return qr, nil
 }

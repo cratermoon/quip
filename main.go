@@ -16,15 +16,19 @@ import (
 func main() {
 	rand.Seed(time.Now().UnixNano() * int64(os.Getpid()))
 
-	quipRepo := quipdb.NewQuipRepo()
+	quipRepo, err := quipdb.NewQuipRepo()
+	if err != nil {
+		log.Print("error getting the quip respository: ", err)
+	}
 
 	quip, err := quipRepo.Quip()
 
 	if err != nil {
-		fmt.Print(err)
-		return
+		log.Print("error getting a quip from the repo: ", err)
+	} else {
+		fmt.Println(quip)
 	}
-	fmt.Println(quip)
+
 	svc.Setup()
 	svc.TimeSetup()
 	log.Fatal(http.ListenAndServe(":8080", nil))
