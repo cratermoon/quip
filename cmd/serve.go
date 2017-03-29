@@ -14,6 +14,7 @@ import (
 )
 
 var author = expvar.NewString("author")
+var authorContact = expvar.NewString("authorContact")
 
 func Serve() {
 	rand.Seed(time.Now().UnixNano() * int64(os.Getpid()))
@@ -34,6 +35,7 @@ func Serve() {
 	h := server.BuildServices()
 
 	author.Set("Steven E. Newton")
+	authorContact.Set("snewton@treetopllc.com")
 
 	log.Fatal(http.ListenAndServe(":8080", h))
 }
