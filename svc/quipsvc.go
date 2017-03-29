@@ -104,7 +104,6 @@ func NewQuipService(r *mux.Router) {
 		decodeRequest,
 		encodeResponse,
 	)
-
 	r.Methods("GET").Path("/quip").Handler(quiphandler)
 	r.Methods("GET").Path("/count").Handler(countHandler)
 }

@@ -7,12 +7,16 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/go-kit/kit/metrics"
+	"github.com/go-kit/kit/metrics/expvar"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 
 	"github.com/cratermoon/quip/models"
 	"github.com/cratermoon/quip/uuid"
 )
+
+var profileCount metrics.Counter
 
 // ProfileService tells the time with many options
 type ProfileService interface {
@@ -61,6 +65,7 @@ func makePostProfileEndpoint(ps profileService) endpoint.Endpoint {
 			return nil, err
 		}
 		ps.PostProfile(models.Profile{ID: u, Name: "Adam", Addresses: []models.Location{l}})
+		profileCount.Add(1)
 		return postProfileResponse{"ok"}, nil
 	}
 }
@@ -86,6 +91,8 @@ func NewProfileService(r *mux.Router) {
 
 	r.Methods("GET").Path("/profile/{id}").Handler(getProfileHandler)
 	r.Methods("POST").Path("/profile").Handler(postProfileHandler)
+
+	profileCount = expvar.NewCounter("profile_count")
 }
 
 func decodeProfileRequest(ctx context.Context, r *http.Request) (interface{}, error) {
