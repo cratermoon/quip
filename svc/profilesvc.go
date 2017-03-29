@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/cratermoon/quip/models"
-	"github.com/cratermoon/quip/uuid"
+	"github.com/cratermoon/quip/storage"
 )
 
 var profileCount metrics.Counter
@@ -24,56 +24,61 @@ type ProfileService interface {
 	PostProfile(string, string)
 }
 
-type profileService struct{}
-
-func (q profileService) GetProfile() (models.Profile, error) {
-	u, err := uuid.NewUUID()
-	return models.Profile{ID: u, Name: "", Addresses: nil}, err
+type profileService struct {
+	s storage.ProfileStorage
 }
 
-func (q profileService) PostProfile(models.Profile) {
-
+func (ps profileService) GetProfile(id string) (models.Profile, error) {
+	return ps.s.Get(id)
 }
 
-type profileRequest struct{}
+func (ps profileService) PostProfile(name string, addr string) (models.Profile, error) {
+	p, err := ps.s.Add(name, addr)
+	return p, err
+}
+
+type profileRequest struct {
+	ID string `json:"id"`
+}
 
 type profileResponse struct {
 	Person models.Profile `json:"person"`
 }
 
 type postProfileRequest struct {
-	Name    string
-	Address string
+	Name    string `json:"name"`
+	Address string `json:"address"`
 }
 
 type postProfileResponse struct {
-	Status string `json:"status"`
+	Status string         `json:"status"`
+	Person models.Profile `json:"person"`
 }
 
 func makeProfileEndpoint(ps profileService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		p, err := ps.GetProfile()
+		req := request.(profileRequest)
+		p, err := ps.GetProfile(req.ID)
 		return profileResponse{p}, err
 	}
 }
 
 func makePostProfileEndpoint(ps profileService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		l := models.Location("1 Paradise Lane")
-		u, err := uuid.NewUUID()
+		req := request.(postProfileRequest)
+		p, err := ps.PostProfile(req.Name, req.Address)
 		if err != nil {
-			return nil, err
+			return postProfileResponse{err.Error(), p}, err
 		}
-		ps.PostProfile(models.Profile{ID: u, Name: "Adam", Addresses: []models.Location{l}})
 		profileCount.Add(1)
-		return postProfileResponse{"ok"}, nil
+		return postProfileResponse{"ok", p}, nil
 	}
 }
 
 // NewProfileService initializes the Profile Service
 func NewProfileService(r *mux.Router) {
 
-	svc := profileService{}
+	svc := profileService{storage.NewProfileStorage()}
 
 	getProfileHandler := httptransport.NewServer(
 		makeProfileEndpoint(svc),
