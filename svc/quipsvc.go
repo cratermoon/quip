@@ -13,6 +13,7 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/expvar"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/gorilla/mux"
 )
 
 var quipsServed metrics.Counter
@@ -78,16 +79,16 @@ func makeGetQuipEndpont(qs QuipService) endpoint.Endpoint {
 
 }
 
-// Setup initializes the QuipService
-func Setup() {
+// NewQuipService initializes the QuipService
+func NewQuipService(r *mux.Router) {
 
-	r, err := quipdb.NewQuipRepo()
+	q, err := quipdb.NewQuipRepo()
 
 	if err != nil {
 		return
 	}
 
-	svc := quipService{r}
+	svc := quipService{q}
 
 	quipsServed = expvar.NewCounter("quips_served")
 	quipLatency = expvar.NewHistogram("quip_quickness", 50)
@@ -104,8 +105,8 @@ func Setup() {
 		encodeResponse,
 	)
 
-	http.Handle("/quip", quiphandler)
-	http.Handle("/count", countHandler)
+	r.Methods("GET").Path("/quip").Handler(quiphandler)
+	r.Methods("GET").Path("/count").Handler(countHandler)
 }
 
 func decodeRequest(_ context.Context, r *http.Request) (interface{}, error) {

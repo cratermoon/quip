@@ -2,9 +2,9 @@ package models
 
 // Profile represents a toy person
 type Profile struct {
-	ID        string
-	Name      string
-	Addresses []Location
+	ID        string     `json:"id"`
+	Name      string     `json:"name"`
+	Addresses []Location `json:"addresses"`
 }
 
 // Location is a string for an address

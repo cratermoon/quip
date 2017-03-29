@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/gorilla/mux"
 )
 
 // TimeService tells the time with many options
@@ -34,8 +35,8 @@ func makeTimeEndpoint(ts timeService) endpoint.Endpoint {
 	}
 }
 
-// TimeSetup initializes the Time Service
-func TimeSetup() {
+// NewTimeService initializes the Time Service
+func NewTimeService(r *mux.Router) {
 
 	svc := timeService{}
 
@@ -45,7 +46,7 @@ func TimeSetup() {
 		encodeTimeResponse,
 	)
 
-	http.Handle("/time", timehandler)
+	r.Methods("GET").Path("/time").Handler(timehandler)
 }
 
 func decodeTimeRequest(_ context.Context, r *http.Request) (interface{}, error) {
