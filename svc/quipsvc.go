@@ -18,6 +18,7 @@ import (
 var quipsServed metrics.Counter
 var quipLatency metrics.Histogram
 
+// QuipService provides a quip server
 type QuipService interface {
 	GetQuip() (string, error)
 	CountQuips() (int64, error)

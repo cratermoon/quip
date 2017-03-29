@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "expvar"
+	"expvar"
 	"fmt"
 	"log"
 	"math/rand"
@@ -12,6 +12,8 @@ import (
 	"github.com/cratermoon/quip/quipdb"
 	"github.com/cratermoon/quip/svc"
 )
+
+var author = expvar.NewString("author")
 
 func main() {
 	rand.Seed(time.Now().UnixNano() * int64(os.Getpid()))
@@ -32,5 +34,8 @@ func main() {
 	svc.Setup()
 	svc.TimeSetup()
 	h := svc.NewProfileService()
+
+        author.Set("Steven E. Newton")
+
 	log.Fatal(http.ListenAndServe(":8080", h))
 }
