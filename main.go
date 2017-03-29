@@ -31,5 +31,6 @@ func main() {
 
 	svc.Setup()
 	svc.TimeSetup()
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	h := svc.NewProfileService()
+	log.Fatal(http.ListenAndServe(":8080", h))
 }
