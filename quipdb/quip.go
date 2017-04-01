@@ -8,6 +8,8 @@ import (
 
 	"os"
 
+	"strconv"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/simpledb"
@@ -18,23 +20,12 @@ type QuipRepo struct {
 	sdb *simpledb.SimpleDB
 }
 
-func countQuips(sdb *simpledb.SimpleDB) (int64, error) {
-	params := &simpledb.DomainMetadataInput{
-		DomainName: aws.String("quips"),
-	}
-	resp, err := sdb.DomainMetadata(params)
-	if err != nil {
-		return 0, err
-	}
-	return *resp.ItemCount, nil
-}
-
-func getQuip(sdb *simpledb.SimpleDB) (string, error) {
-
+// Quip returns a single short, witty, quip
+func (q QuipRepo) Quip() (string, error) {
 	params := &simpledb.SelectInput{
 		SelectExpression: aws.String("select text from `quips`"), // Required
 	}
-	resp, err := sdb.Select(params)
+	resp, err := q.sdb.Select(params)
 
 	if err != nil {
 		return "Experience tranquility", err
@@ -42,18 +33,69 @@ func getQuip(sdb *simpledb.SimpleDB) (string, error) {
 	if len(resp.Items) == 0 {
 		return "", errors.New("Experience tranquility")
 	}
-	i := rand.Intn(len(resp.Items) - 1)
+	i := rand.Intn(len(resp.Items))
 	return strings.TrimSpace(*resp.Items[i].Attributes[0].Value), nil
-}
-
-// Quip returns a single short, witty, quip
-func (q QuipRepo) Quip() (string, error) {
-	return getQuip(q.sdb)
 }
 
 // Count returns the number of quips available in the repo
 func (q QuipRepo) Count() (int64, error) {
-	return countQuips(q.sdb)
+	params := &simpledb.DomainMetadataInput{
+		DomainName: aws.String("quips"),
+	}
+	resp, err := q.sdb.DomainMetadata(params)
+	if err != nil {
+		return 0, err
+	}
+	return *resp.ItemCount, nil
+}
+
+// List retuns the list of all quips
+func (q QuipRepo) List() ([]string, error) {
+	params := &simpledb.SelectInput{
+		SelectExpression: aws.String("select text from `quips`"), // Required
+	}
+	resp, err := q.sdb.Select(params)
+
+	if err != nil {
+		return nil, err
+	}
+	count := len(resp.Items)
+	if count == 0 {
+		return nil, errors.New("Experience tranquility")
+	}
+
+	quips := make([]string, count, count)
+	for i, item := range resp.Items {
+		quips[i] = *item.Attributes[0].Value
+	}
+	return quips, nil
+}
+
+// Add will insert the given string into the quip repo
+func (q QuipRepo) Add(quip string) (string, error) {
+	id := &simpledb.ReplaceableAttribute{
+		Name:  aws.String("id"),
+		Value: aws.String(strconv.FormatInt(time.Now().Unix(), 10)),
+	}
+	text := &simpledb.ReplaceableAttribute{
+		Name:  aws.String("text"),
+		Value: aws.String(quip),
+	}
+	attributes := make([]*simpledb.ReplaceableAttribute, 2, 2)
+	attributes[0] = id
+	attributes[1] = text
+	params := &simpledb.PutAttributesInput{
+		Attributes: attributes,
+		DomainName: aws.String("newquips"),
+		ItemName:   aws.String(*id.Value),
+	}
+	// according to Amazon's documentation, the returned PutAttributesOutput
+	// is an opaque struct anyway
+	_, err := q.sdb.PutAttributes(params)
+	if err != nil {
+		return "", err
+	}
+	return *id.Value, nil
 }
 
 // NewQuipRepo returns a new quip repository
