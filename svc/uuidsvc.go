@@ -35,9 +35,9 @@ func makeUUIDEndpoint(us uuidService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		u, err := us.GetUUID()
 		if err != nil {
-			return uuidResponse{u,err.Error()}, nil
+			return uuidResponse{"err "+err.Error(), u}, nil
 		}
-		return uuidResponse{u,"ok"}, nil
+		return uuidResponse{"ok", u}, nil
 	}
 }
 
