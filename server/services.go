@@ -12,9 +12,9 @@ import (
 
 func BuildServices() http.Handler {
 	r := mux.NewRouter()
-	svc.NewProfileService(r)
 	svc.NewQuipService(r)
 	svc.NewTimeService(r)
+	svc.NewUUIDService(r)
 
 	r.Methods("GET").Path("/debug/vars").Handler(expvar.Handler())
 

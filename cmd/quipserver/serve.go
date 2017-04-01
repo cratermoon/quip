@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"expvar"
@@ -16,7 +16,7 @@ import (
 var author = expvar.NewString("author")
 var authorContact = expvar.NewString("authorContact")
 
-func Serve() {
+func main() {
 	rand.Seed(time.Now().UnixNano() * int64(os.Getpid()))
 
 	quipRepo, err := quipdb.NewQuipRepo()

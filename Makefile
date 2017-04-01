@@ -1,4 +1,4 @@
-run:
-	go install && quip
+test:
+	go test ./...
 
-.PHONY: run
+.PHONY: test

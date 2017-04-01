@@ -1,3 +1,3 @@
 unset AWS_ACCESS_KEY
 unset AWS_SECRET_KEY
-quip
+quipserver
