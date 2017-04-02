@@ -24,3 +24,24 @@ func readKey() (*rsa.PrivateKey, error) {
 	}
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
+
+func readPublicKeyCert() (*rsa.PublicKey, error) {
+
+	certFile := "quip.crt"
+
+	publicKeyCert, err := ioutil.ReadFile(certFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(publicKeyCert)
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse certificate PEM")
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	return cert.PublicKey.(*rsa.PublicKey), nil
+}

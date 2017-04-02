@@ -17,11 +17,11 @@ func Verify(text, signatureHex string) error {
 
 	sum := sha256.Sum256([]byte(text))
 
-	rsaPrivateKey, err := readKey()
+	rsaPublicKey, err := readPublicKeyCert()
 
 	if err != nil {
 		return err
 	}
 
-	return rsa.VerifyPKCS1v15(&rsaPrivateKey.PublicKey, crypto.SHA256, sum[:], signature)
+	return rsa.VerifyPKCS1v15(rsaPublicKey, crypto.SHA256, sum[:], signature)
 }
