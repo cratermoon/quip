@@ -8,7 +8,7 @@ import (
 )
 
 type Verifier struct {
-	certFile string
+	Cert []byte
 }
 
 func (v Verifier) Verify(text, signatureHex string) error {
@@ -21,7 +21,7 @@ func (v Verifier) Verify(text, signatureHex string) error {
 
 	sum := sha256.Sum256([]byte(text))
 
-	rsaPublicKey, err := readPublicKeyCert(v.certFile)
+	rsaPublicKey, err := parsePublicKeyCert(v.Cert)
 
 	if err != nil {
 		return err

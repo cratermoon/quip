@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"net/http"
@@ -22,6 +23,7 @@ import (
 var quipsServed metrics.Counter
 var quipLatency metrics.Histogram
 
+// MAX_QUIP_LENGTH is the longest quip allowed, leaving space for hashtag
 const MAX_QUIP_LENGTH = 134
 
 // QuipService provides a quip server
@@ -29,11 +31,12 @@ type QuipService interface {
 	Get() (string, error)
 	Count() (int64, error)
 	List() ([]string, error)
-	Add(string) (string, error)
+	Add(quip string, sig string) (string, error)
 }
 
 type quipService struct {
 	repo quipdb.QuipRepo
+	ver  signing.Verifier
 }
 
 type getRequest struct{}
@@ -86,12 +89,13 @@ func (q quipService) List() ([]string, error) {
 	return q.repo.List()
 }
 
-func (q quipService) Add(quip string) (string, error) {
+func (q quipService) Add(quip string, sig string) (string, error) {
 	if len(quip) > MAX_QUIP_LENGTH {
 		return "too long", fmt.Errorf(
 			"Maximum quip length (%d) exceeded, got %d",
 			MAX_QUIP_LENGTH, len(quip))
 	}
+	q.ver.Verify(quip, sig)
 	return q.repo.Add(quip)
 }
 
@@ -130,11 +134,7 @@ func makeAddEndpoint(qs QuipService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(addRequest)
 		if ok {
-			err := signing.Verify(req.Quip, req.Signature)
-			if err != nil {
-				return addResponse{"err", err.Error()}, nil
-			}
-			name, err := qs.Add(req.Quip)
+			name, err := qs.Add(req.Quip, req.Signature)
 			if err != nil {
 				return addResponse{name, err.Error()}, nil
 			}
@@ -170,7 +170,7 @@ func encodeAddResponse(_ context.Context, w http.ResponseWriter, response interf
 }
 
 // NewQuipService initializes the QuipService
-func NewQuipService(r *mux.Router) {
+func NewQuipService(r *mux.Router, keyFName string) {
 
 	q, err := quipdb.NewQuipRepo()
 
@@ -178,7 +178,14 @@ func NewQuipService(r *mux.Router) {
 		return
 	}
 
-	svc := quipService{q}
+	crt, err := ioutil.ReadFile(keyFName)
+
+	if err != nil {
+		return
+	}
+
+	v := signing.Verifier{Cert: crt}
+	svc := quipService{q, v}
 
 	quipsServed = expvar.NewCounter("quips_served")
 	quipLatency = expvar.NewHistogram("quip_quickness", 50)

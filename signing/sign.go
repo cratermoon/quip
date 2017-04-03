@@ -10,13 +10,13 @@ import (
 )
 
 type Signer struct {
-	keyFile string
+	Key []byte
 }
 
 func (s Signer) Sign(text string) (string, error) {
 	hashed := sha256.Sum256([]byte(text))
 
-	rsaPrivateKey, err := readKey(s.keyFile)
+	rsaPrivateKey, err := parseKey(s.Key)
 
 	if err != nil {
 		return "", err

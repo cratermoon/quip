@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -23,17 +24,35 @@ func usage(cmd string) {
 	os.Exit(1)
 }
 
-func main() {
-	fmt.Println("Posting a new quip at", time.Now())
-	url := "http://localhost:8080/quip"
+var (
+	quip    = flag.String("q", "", "Provide a witty saying")
+	keyFile = flag.String("k", "quip.key", "key file for posting (optional)")
+	url     = flag.String("u", "http://localhost:8080/quip", "url of quip server")
+	verbose = flag.Bool("v", false, "be verbose")
+)
 
-	if len(os.Args) < 2 {
+func main() {
+	flag.Parse()
+
+	if *quip == "" {
 		usage(os.Args[0])
 	}
-	q := NewQuip{Quip: os.Args[1]}
 
-	var err error
-	q.Signature, err = signing.Sign(q.Quip)
+	if !*verbose {
+		fmt.Printf("Posting a new quip (%s) at %v\n", *quip, time.Now())
+	}
+
+	q := NewQuip{Quip: *quip}
+
+	crt, err := ioutil.ReadFile(*keyFile)
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return
+	}
+
+	s := signing.Signer{Key: crt}
+	q.Signature, err = s.Sign(q.Quip)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -41,14 +60,15 @@ func main() {
 	var j bytes.Buffer
 	json.NewEncoder(&j).Encode(q)
 
-	resp, err := http.Post(url, "application/json", &j)
+	resp, err := http.Post(*url, "application/json", &j)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("response Status:", resp.Status)
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
+	if *verbose {
+		fmt.Println(string(body))
+	}
 }

@@ -10,9 +10,10 @@ import (
 	"github.com/cratermoon/quip/svc"
 )
 
+// BuildServices creates the endpoints
 func BuildServices() http.Handler {
 	r := mux.NewRouter()
-	svc.NewQuipService(r)
+	svc.NewQuipService(r, "quip.crt")
 	svc.NewTimeService(r)
 	svc.NewUUIDService(r)
 

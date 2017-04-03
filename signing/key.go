@@ -8,19 +8,34 @@ import (
 	"io/ioutil"
 )
 
-func readKey(keyFile string) (*rsa.PrivateKey, error) {
+func parseKey(pemKey []byte) (*rsa.PrivateKey, error) {
+	block, _ := pem.Decode(pemKey)
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse certificate PEM")
+	}
+	return x509.ParsePKCS1PrivateKey(block.Bytes)
+}
+
+func ReadKey(keyFile string) (*rsa.PrivateKey, error) {
 
 	prvKeyPem, err := ioutil.ReadFile(keyFile)
 
 	if err != nil {
 		return nil, err
 	}
+	return parseKey(prvKeyPem)
+}
 
-	block, _ := pem.Decode(prvKeyPem)
+func parsePublicKeyCert(pemCert []byte) (*rsa.PublicKey, error) {
+	block, _ := pem.Decode(pemCert)
 	if block == nil {
 		return nil, fmt.Errorf("failed to parse certificate PEM")
 	}
-	return x509.ParsePKCS1PrivateKey(block.Bytes)
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	return cert.PublicKey.(*rsa.PublicKey), nil
 }
 
 func readPublicKeyCert(certFile string) (*rsa.PublicKey, error) {
@@ -31,13 +46,5 @@ func readPublicKeyCert(certFile string) (*rsa.PublicKey, error) {
 		return nil, err
 	}
 
-	block, _ := pem.Decode(publicKeyCert)
-	if block == nil {
-		return nil, fmt.Errorf("failed to parse certificate PEM")
-	}
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-	return cert.PublicKey.(*rsa.PublicKey), nil
+	return parsePublicKeyCert(publicKeyCert)
 }
