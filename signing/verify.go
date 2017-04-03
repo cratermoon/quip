@@ -7,7 +7,11 @@ import (
 	"encoding/hex"
 )
 
-func Verify(text, signatureHex string) error {
+type Verifier struct {
+	certFile string
+}
+
+func (v Verifier) Verify(text, signatureHex string) error {
 
 	signature := make([]byte, hex.DecodedLen(len(signatureHex)))
 	_, err := hex.Decode(signature, []byte(signatureHex))
@@ -17,7 +21,7 @@ func Verify(text, signatureHex string) error {
 
 	sum := sha256.Sum256([]byte(text))
 
-	rsaPublicKey, err := readPublicKeyCert()
+	rsaPublicKey, err := readPublicKeyCert(v.certFile)
 
 	if err != nil {
 		return err

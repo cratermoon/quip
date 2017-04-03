@@ -9,10 +9,14 @@ import (
 	"encoding/hex"
 )
 
-func Sign(text string) (string, error) {
+type Signer struct {
+	keyFile string
+}
+
+func (s Signer) Sign(text string) (string, error) {
 	hashed := sha256.Sum256([]byte(text))
 
-	rsaPrivateKey, err := readKey()
+	rsaPrivateKey, err := readKey(s.keyFile)
 
 	if err != nil {
 		return "", err

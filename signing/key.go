@@ -8,9 +8,7 @@ import (
 	"io/ioutil"
 )
 
-func readKey() (*rsa.PrivateKey, error) {
-
-	keyFile := "quip.key"
+func readKey(keyFile string) (*rsa.PrivateKey, error) {
 
 	prvKeyPem, err := ioutil.ReadFile(keyFile)
 
@@ -25,9 +23,7 @@ func readKey() (*rsa.PrivateKey, error) {
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
 
-func readPublicKeyCert() (*rsa.PublicKey, error) {
-
-	certFile := "quip.crt"
+func readPublicKeyCert(certFile string) (*rsa.PublicKey, error) {
 
 	publicKeyCert, err := ioutil.ReadFile(certFile)
 
