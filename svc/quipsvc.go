@@ -96,7 +96,10 @@ func (q quipService) Add(quip string, sig string) (string, error) {
 			"Maximum quip length (%d) exceeded, got %d",
 			MAX_QUIP_LENGTH, len(quip))
 	}
-	q.ver.Verify(quip, sig)
+	err := q.ver.Verify(quip, sig)
+	if err != nil {
+		return quip, err
+	}
 	return q.repo.Add(quip)
 }
 
