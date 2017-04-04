@@ -102,9 +102,9 @@ func (q QuipRepo) Add(quip string) (string, error) {
 func NewQuipRepo() (QuipRepo, error) {
 	rand.Seed(time.Now().UnixNano() * int64(os.Getpid()))
 
-	s, err := session.NewSessionWithOptions(session.Options{Profile: "cmdev", SharedConfigState: session.SharedConfigEnable})
-
 	var qr QuipRepo
+
+	s, err := session.NewSessionWithOptions(session.Options{Profile: "cmdev", SharedConfigState: session.SharedConfigEnable})
 
 	if err != nil {
 		return qr, err

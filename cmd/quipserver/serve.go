@@ -2,6 +2,7 @@ package main
 
 import (
 	"expvar"
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -13,29 +14,38 @@ import (
 	"github.com/cratermoon/quip/server"
 )
 
-var author = expvar.NewString("author")
-var authorContact = expvar.NewString("authorContact")
+var (
+	keyFile       = flag.String("k", "quip.crt", "private key cert")
+	port          = flag.String("p", "8080", "port to serve on")
+	verbose       = flag.Bool("v", false, "be verbose")
+	author        = expvar.NewString("author")
+	authorContact = expvar.NewString("authorContact")
+)
 
 func main() {
+
+	flag.Parse()
+
 	rand.Seed(time.Now().UnixNano() * int64(os.Getpid()))
 
 	quipRepo, err := quipdb.NewQuipRepo()
 	if err != nil {
-		log.Print("error getting the quip respository: ", err)
+		log.Fatal("error getting the quip respository: ", err)
 	}
 
 	quip, err := quipRepo.Quip()
 
 	if err != nil {
-		log.Print("error getting a quip from the repo: ", err)
+		log.Fatal("error getting a quip from the repo: ", err)
 	} else {
-		fmt.Println(quip)
+		log.Print(quip)
 	}
-
-	h := server.BuildServices()
 
 	author.Set("Steven E. Newton")
 	authorContact.Set("snewton@treetopllc.com")
 
-	log.Fatal(http.ListenAndServe(":8080", h))
+	h := server.BuildServices()
+
+	fmt.Println("Listening on port", *port)
+	log.Fatal(http.ListenAndServe(":"+*port, h))
 }

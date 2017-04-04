@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"time"
 
 	"net/http"
@@ -181,6 +182,7 @@ func NewQuipService(r *mux.Router, keyFName string) {
 	crt, err := ioutil.ReadFile(keyFName)
 
 	if err != nil {
+		log.Println("Error starting quip service", err)
 		return
 	}
 
