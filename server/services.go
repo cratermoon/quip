@@ -11,9 +11,9 @@ import (
 )
 
 // BuildServices creates the endpoints
-func BuildServices() http.Handler {
+func BuildServices(keyFile string) http.Handler {
 	r := mux.NewRouter()
-	svc.NewQuipService(r, "quip.crt")
+	svc.NewQuipService(r, keyFile)
 	svc.NewTimeService(r)
 	svc.NewUUIDService(r)
 

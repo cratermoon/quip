@@ -92,13 +92,14 @@ func (q quipService) List() ([]string, error) {
 
 func (q quipService) Add(quip string, sig string) (string, error) {
 	if len(quip) > MAX_QUIP_LENGTH {
-		return "too long", fmt.Errorf(
+		return "err", fmt.Errorf(
 			"Maximum quip length (%d) exceeded, got %d",
 			MAX_QUIP_LENGTH, len(quip))
 	}
 	err := q.ver.Verify(quip, sig)
 	if err != nil {
-		return quip, err
+		log.Printf("Signature error (%q) %s\n", quip, err.Error())
+		return quip, fmt.Errorf("Signature Error")
 	}
 	return q.repo.Add(quip)
 }
@@ -137,14 +138,15 @@ func makeListEndpoint(qs QuipService) endpoint.Endpoint {
 func makeAddEndpoint(qs QuipService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(addRequest)
-		if ok {
-			name, err := qs.Add(req.Quip, req.Signature)
-			if err != nil {
-				return addResponse{name, err.Error()}, nil
-			}
-			return addResponse{name, ""}, nil
+		if !ok {
+			return addResponse{"", fmt.Sprintf("Experience tranquility")}, errors.New("type assertion failed")
 		}
-		return addResponse{"", fmt.Sprintf("Experience tranquility")}, errors.New("type assertion failed")
+		name, err := qs.Add(req.Quip, req.Signature)
+		if err != nil {
+			return addResponse{name, err.Error()}, nil
+		}
+		log.Printf("New quip added: %q\n", req.Quip)
+		return addResponse{name, ""}, nil
 	}
 }
 

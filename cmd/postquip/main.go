@@ -32,10 +32,15 @@ var (
 )
 
 func main() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s:\n", os.Args[0])
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	if *quip == "" {
-		usage(os.Args[0])
+		flag.PrintDefaults()
+		return
 	}
 
 	if !*verbose {

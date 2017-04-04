@@ -44,7 +44,7 @@ func main() {
 	author.Set("Steven E. Newton")
 	authorContact.Set("snewton@treetopllc.com")
 
-	h := server.BuildServices()
+	h := server.BuildServices(*keyFile)
 
 	fmt.Println("Listening on port", *port)
 	log.Fatal(http.ListenAndServe(":"+*port, h))
