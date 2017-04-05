@@ -22,8 +22,6 @@ func Key(sess *session.Session, keyname string) ([]byte, error) {
 	resp, err := svc.GetObject(params)
 
 	if err != nil {
-		// Print the error, cast err to awserr.Error to get the Code and
-		// Message from an error.
 		log.Println(err)
 		return nil, err
 	}
