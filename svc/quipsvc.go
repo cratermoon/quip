@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 
+	"github.com/cratermoon/quip/aws"
 	"github.com/cratermoon/quip/quipdb"
 	"github.com/cratermoon/quip/signing"
 )
@@ -24,8 +24,8 @@ import (
 var quipsServed metrics.Counter
 var quipLatency metrics.Histogram
 
-// MAX_QUIP_LENGTH is the longest quip allowed, leaving space for hashtag
-const MAX_QUIP_LENGTH = 134
+// maxQuipLength is the longest quip allowed, leaving space for hashtag
+const maxQuipLength = 134
 
 // QuipService provides a quip server
 type QuipService interface {
@@ -91,10 +91,10 @@ func (q quipService) List() ([]string, error) {
 }
 
 func (q quipService) Add(quip string, sig string) (string, error) {
-	if len(quip) > MAX_QUIP_LENGTH {
+	if len(quip) > maxQuipLength {
 		return "err", fmt.Errorf(
 			"Maximum quip length (%d) exceeded, got %d",
-			MAX_QUIP_LENGTH, len(quip))
+			maxQuipLength, len(quip))
 	}
 	err := q.ver.Verify(quip, sig)
 	if err != nil {
@@ -184,7 +184,12 @@ func NewQuipService(r *mux.Router, keyFName string) {
 		return
 	}
 
-	crt, err := ioutil.ReadFile(keyFName)
+	kit, err := aws.NewKit()
+	if err != nil {
+		log.Println("Error starting quip service", err)
+		return
+	}
+	crt, err := kit.S3Object(keyFName)
 
 	if err != nil {
 		log.Println("Error starting quip service", err)

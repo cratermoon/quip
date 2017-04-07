@@ -24,10 +24,16 @@ type Kit struct {
 	s3      *s3.S3
 }
 
+const (
+	defaultAWSProfile string = "cdmev"
+	defaultS3Bucket   string = "cmdev.com"
+	defaultSDBDomain  string = "newquips"
+)
+
 // NewKit creates a new object for AWS-related functions
 func NewKit() (*Kit, error) {
 
-	session, err := session.NewSessionWithOptions(session.Options{Profile: "cmdev", SharedConfigState: session.SharedConfigEnable})
+	session, err := session.NewSessionWithOptions(session.Options{Profile: defaultAWSProfile, SharedConfigState: session.SharedConfigEnable})
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +51,7 @@ func NewKit() (*Kit, error) {
 // S3Object returns the content at keyname in the default bucket
 func (k *Kit) S3Object(keyname string) ([]byte, error) {
 	params := &s3.GetObjectInput{
-		Bucket: aws.String("cmdev.com"),
+		Bucket: aws.String(defaultS3Bucket),
 		Key:    aws.String(keyname),
 	}
 	resp, err := k.s3.GetObject(params)
@@ -108,6 +114,7 @@ func (k *Kit) SDBList(attribute string, domain string) ([]string, error) {
 	return quips, nil
 }
 
+// SDBAdd places a new value in the domain at given attribute name
 func (k *Kit) SDBAdd(attribute string, value string) (string, error) {
 	id := &simpledb.ReplaceableAttribute{
 		Name:  aws.String("id"),
@@ -122,7 +129,7 @@ func (k *Kit) SDBAdd(attribute string, value string) (string, error) {
 	attributes[1] = text
 	params := &simpledb.PutAttributesInput{
 		Attributes: attributes,
-		DomainName: aws.String("newquips"),
+		DomainName: aws.String(defaultSDBDomain),
 		ItemName:   aws.String(*id.Value),
 	}
 	// according to Amazon's documentation, the returned PutAttributesOutput

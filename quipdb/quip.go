@@ -11,7 +11,7 @@ import (
 
 //QuipRepo generates short, witty, quips from a repository
 type QuipRepo struct {
-	kit *aws.AWSKit
+	kit *aws.Kit
 }
 
 // Quip returns a single short, witty, quip
@@ -46,7 +46,7 @@ func NewQuipRepo() (QuipRepo, error) {
 
 	var qr QuipRepo
 
-	kit, err := aws.NewAWSKit()
+	kit, err := aws.NewKit()
 	if err != nil {
 		return qr, err
 	}
