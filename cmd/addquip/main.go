@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	ATTRIBUTE       = "text"
-	MAX_QUIP_LENGTH = 134
+	attributeName string = "text"
+	maxQuipLength int    = 134
 )
 
 var (
@@ -32,9 +32,9 @@ func main() {
 		return
 	}
 
-	if len(*quip) > MAX_QUIP_LENGTH {
+	if len(*quip) > maxQuipLength {
 		fmt.Fprintf(os.Stderr, "Maximum quip length (%d) exceeded, got %d\n",
-			MAX_QUIP_LENGTH, len(*quip))
+			maxQuipLength, len(*quip))
 		return
 	}
 
