@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 )
 
 func parseKey(pemKey []byte) (*rsa.PrivateKey, error) {
@@ -14,16 +13,6 @@ func parseKey(pemKey []byte) (*rsa.PrivateKey, error) {
 		return nil, fmt.Errorf("failed to parse certificate PEM")
 	}
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
-}
-
-func ReadKey(keyFile string) (*rsa.PrivateKey, error) {
-
-	prvKeyPem, err := ioutil.ReadFile(keyFile)
-
-	if err != nil {
-		return nil, err
-	}
-	return parseKey(prvKeyPem)
 }
 
 func parsePublicKeyCert(pemCert []byte) (*rsa.PublicKey, error) {
@@ -36,15 +25,4 @@ func parsePublicKeyCert(pemCert []byte) (*rsa.PublicKey, error) {
 		return nil, err
 	}
 	return cert.PublicKey.(*rsa.PublicKey), nil
-}
-
-func readPublicKeyCert(certFile string) (*rsa.PublicKey, error) {
-
-	publicKeyCert, err := ioutil.ReadFile(certFile)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return parsePublicKeyCert(publicKeyCert)
 }

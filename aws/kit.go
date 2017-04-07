@@ -25,7 +25,7 @@ type Kit struct {
 }
 
 const (
-	defaultAWSProfile string = "cdmev"
+	defaultAWSProfile string = "cmdev"
 	defaultS3Bucket   string = "cmdev.com"
 	defaultSDBDomain  string = "newquips"
 )
