@@ -11,6 +11,7 @@ import (
 
 	"os"
 
+	"github.com/cratermoon/quip/aws"
 	"github.com/cratermoon/quip/signing"
 )
 
@@ -49,8 +50,13 @@ func main() {
 
 	q := NewQuip{Quip: *quip}
 
-	crt, err := ioutil.ReadFile(*keyFile)
+	kit, err := aws.NewKit()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return
+	}
 
+	crt, err := kit.S3Object(*keyFile)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return

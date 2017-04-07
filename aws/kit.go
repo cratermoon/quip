@@ -1,3 +1,4 @@
+// Package aws provides a toolkit of basic AWS functions
 package aws
 
 import (
@@ -16,15 +17,15 @@ import (
 	"github.com/aws/aws-sdk-go/service/simpledb"
 )
 
-// Interface to AWS
-type AWSKit struct {
+// Kit is an interface to basic AWS functions
+type Kit struct {
 	session *session.Session
 	sdb     *simpledb.SimpleDB
 	s3      *s3.S3
 }
 
-// NewAWSKit creates a new object for AWS-related functions
-func NewAWSKit() (*AWSKit, error) {
+// NewKit creates a new object for AWS-related functions
+func NewKit() (*Kit, error) {
 
 	session, err := session.NewSessionWithOptions(session.Options{Profile: "cmdev", SharedConfigState: session.SharedConfigEnable})
 	if err != nil {
@@ -33,7 +34,7 @@ func NewAWSKit() (*AWSKit, error) {
 	sdb := simpledb.New(session)
 	s3 := s3.New(session)
 
-	kit := AWSKit{
+	kit := Kit{
 		session: session,
 		sdb:     sdb,
 		s3:      s3,
@@ -42,7 +43,7 @@ func NewAWSKit() (*AWSKit, error) {
 }
 
 // S3Object returns the content at keyname in the default bucket
-func (k *AWSKit) S3Object(keyname string) ([]byte, error) {
+func (k *Kit) S3Object(keyname string) ([]byte, error) {
 	params := &s3.GetObjectInput{
 		Bucket: aws.String("cmdev.com"),
 		Key:    aws.String(keyname),
@@ -55,7 +56,7 @@ func (k *AWSKit) S3Object(keyname string) ([]byte, error) {
 }
 
 // SDBSelectRandom will return a randomly selected value from the results of query
-func (k *AWSKit) SDBSelectRandom(query string) (string, error) {
+func (k *Kit) SDBSelectRandom(query string) (string, error) {
 	params := &simpledb.SelectInput{
 		// "select text from `quips`"
 		SelectExpression: aws.String(query),
@@ -73,7 +74,7 @@ func (k *AWSKit) SDBSelectRandom(query string) (string, error) {
 }
 
 // SDBCountItems returns the number of items in the given domain
-func (k *AWSKit) SDBCountItems(domain string) (int64, error) {
+func (k *Kit) SDBCountItems(domain string) (int64, error) {
 	params := &simpledb.DomainMetadataInput{
 		DomainName: aws.String(domain),
 	}
@@ -84,7 +85,8 @@ func (k *AWSKit) SDBCountItems(domain string) (int64, error) {
 	return *resp.ItemCount, nil
 }
 
-func (k *AWSKit) SDBList(attribute string, domain string) ([]string, error) {
+// SDBList fetches all the attributes in a domain
+func (k *Kit) SDBList(attribute string, domain string) ([]string, error) {
 	q := fmt.Sprintf("select %s from `%s`", attribute, domain)
 	params := &simpledb.SelectInput{
 		SelectExpression: aws.String(q),
@@ -106,7 +108,7 @@ func (k *AWSKit) SDBList(attribute string, domain string) ([]string, error) {
 	return quips, nil
 }
 
-func (k *AWSKit) SDBAdd(attribute string, value string) (string, error) {
+func (k *Kit) SDBAdd(attribute string, value string) (string, error) {
 	id := &simpledb.ReplaceableAttribute{
 		Name:  aws.String("id"),
 		Value: aws.String(strconv.FormatInt(time.Now().Unix(), 10)),
