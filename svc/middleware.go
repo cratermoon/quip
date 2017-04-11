@@ -22,7 +22,7 @@ type TransientStorable interface {
 
 func add(key string) {
 	tss.Lock()
-	tss.store[key] = time.Now()	
+	tss.store[key] = time.Now()
 	tss.Unlock()
 }
 
@@ -36,10 +36,9 @@ func reap() {
 	for {
 		time.Sleep(time.Second)
 		tss.RLock()
-		log.Printf("Reaping store at %s:  %d entries\n", time.Now().Format(time.StampMilli), len(tss.store))
 		for key, value := range tss.store {
-			if time.Since(value) > time.Duration(3 * time.Second) {
-				log.Printf("Deleting, %s entries\n", key)
+			if time.Since(value) > time.Duration(3*time.Second) {
+				log.Printf("At %s: deleting %s from %d entries\n", time.Now().Format(time.StampMilli), key, len(tss.store))
 				delete(tss.store, key)
 			}
 		}

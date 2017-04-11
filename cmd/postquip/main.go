@@ -25,7 +25,7 @@ func usage(cmd string) {
 var (
 	quip    = flag.String("q", "", "Provide a witty saying")
 	keyFile = flag.String("k", "quip.key", "key file for posting (optional)")
-	url     = flag.String("u", "http://localhost:8080/quip", "url of quip server")
+	url     = flag.String("u", "http://localhost:8080", "url of quip server")
 	verbose = flag.Bool("v", false, "be verbose")
 )
 
@@ -45,8 +45,8 @@ func main() {
 		fmt.Printf("Posting a new quip (%s) at %v\n", *quip, time.Now())
 	}
 
-	uresp, err := http.Get("http://localhost:8080/uuid")
-	
+	uresp, err := http.Get(*url + "/uuid")
+
 	//b, err := ioutil.ReadAll(uresp.Body)
 	var uuid proto.UUIDResponse
 	err = json.NewDecoder(uresp.Body).Decode(&uuid)
@@ -78,7 +78,7 @@ func main() {
 	var j bytes.Buffer
 	json.NewEncoder(&j).Encode(q)
 
-	resp, err := http.Post(*url, "application/json", &j)
+	resp, err := http.Post(*url+"/quip", "application/json", &j)
 	if err != nil {
 		fmt.Println(err)
 		return

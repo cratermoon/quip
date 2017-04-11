@@ -79,13 +79,13 @@ func (q quipService) Add(req proto.AddQuipRequest) (string, error) {
 			"Maximum quip length (%d) exceeded, got %d",
 			maxQuipLength, len(quip))
 	}
-	uuid :=  req.UUID
+	uuid := req.UUID
 	if uuid == "" {
 		log.Printf("Empty UUID\n")
 		return quip, fmt.Errorf("Empty UUID")
 	}
 	log.Printf("Checking signature on %s:%s\n", quip, uuid)
-	v := strings.Join([]string{quip,uuid}, ":")
+	v := strings.Join([]string{quip, uuid}, ":")
 	err := q.ver.Verify(v, req.Signature)
 	if err != nil {
 		log.Printf("Signature error (%q) %s\n", quip, err.Error())

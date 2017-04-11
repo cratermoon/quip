@@ -22,8 +22,7 @@ func (a AddQuipRequest) Value() string {
 	return a.UUID
 }
 
-
 type AddQuipResponse struct {
-        Name string `json:"name"`
-        Err  string `json:"err,omitempty"`
+	Name string `json:"name"`
+	Err  string `json:"err,omitempty"`
 }

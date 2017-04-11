@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
 const testKey = `
 -----BEGIN RSA PRIVATE KEY-----
 MIIBPQIBAAJBALV8UzmEf92NxSt3KBjl5Otvj69zz53ilS9PwEusXwOGH5q324/C

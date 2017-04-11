@@ -10,8 +10,8 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 
-       "github.com/cratermoon/quip/proto"
-       "github.com/cratermoon/quip/uuid"
+	"github.com/cratermoon/quip/proto"
+	"github.com/cratermoon/quip/uuid"
 )
 
 // UUIDService returns a randomly-generated UUID
@@ -31,7 +31,7 @@ func makeUUIDEndpoint(us uuidService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		u, err := us.GetUUID()
 		if err != nil {
-			return proto.UUIDResponse{"err "+err.Error(), u}, nil
+			return proto.UUIDResponse{"err " + err.Error(), u}, nil
 		}
 		return proto.UUIDResponse{"ok", u}, nil
 	}
