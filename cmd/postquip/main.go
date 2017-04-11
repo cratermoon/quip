@@ -12,7 +12,6 @@ import (
 
 	"os"
 
-	"github.com/cratermoon/quip/aws"
 	"github.com/cratermoon/quip/proto"
 	"github.com/cratermoon/quip/signing"
 )
@@ -28,6 +27,13 @@ var (
 	url     = flag.String("u", "http://localhost:8080", "url of quip server")
 	verbose = flag.Bool("v", false, "be verbose")
 )
+
+func check(e error) {
+	if e != nil {
+		fmt.Fprintln(os.Stderr, e.Error())
+		os.Exit(2)
+	}
+}
 
 func main() {
 	flag.Usage = func() {
@@ -46,43 +52,27 @@ func main() {
 	}
 
 	uresp, err := http.Get(*url + "/uuid")
+	check(err)
 
-	//b, err := ioutil.ReadAll(uresp.Body)
 	var uuid proto.UUIDResponse
 	err = json.NewDecoder(uresp.Body).Decode(&uuid)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, err.Error())
-		return
-	}
+	check(err)
+
 	q := proto.AddQuipRequest{Quip: *quip, UUID: uuid.UUID}
 
-	kit, err := aws.NewKit()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
-	}
-
-	crt, err := kit.S3Object(*keyFile)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
-	}
+	crt, err := ioutil.ReadFile(*keyFile)
+	check(err)
 
 	s := signing.Signer{Key: crt}
 	v := strings.Join([]string{q.Quip, q.UUID}, ":")
 	q.Signature, err = s.Sign(v)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	check(err)
+
 	var j bytes.Buffer
 	json.NewEncoder(&j).Encode(q)
 
 	resp, err := http.Post(*url+"/quip", "application/json", &j)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	check(err)
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)

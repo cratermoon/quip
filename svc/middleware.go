@@ -2,6 +2,7 @@ package svc
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -22,14 +23,19 @@ type TransientStorable interface {
 
 func add(key string) {
 	tss.Lock()
+	defer tss.Unlock()
 	tss.store[key] = time.Now()
-	tss.Unlock()
 }
 
-func remove(key string) {
+func remove(key string) bool {
 	tss.Lock()
+	defer tss.Unlock()
+	_, ok := tss.store[key]
+	if !ok {
+		return ok
+	}
 	delete(tss.store, key)
-	tss.Unlock()
+	return ok
 }
 
 func reap() {
@@ -71,8 +77,13 @@ func MakeLookupMiddleware() endpoint.Middleware {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
 			r, ok := request.(TransientStorable)
 			if ok {
-				log.Printf("removing %s\n", r.Value())
-				remove(r.Value())
+				removed := remove(r.Value())
+				if !removed {
+					// someone tried to pull a fast one. Kill it with fire!
+					log.Printf("Warning! Unknown nonce %s\n", r.Value())
+					return nil, fmt.Errorf("invalid nonce %s", r.Value())
+				}
+				log.Printf("removed %s\n", r.Value())
 			}
 			return next(ctx, request)
 		}
