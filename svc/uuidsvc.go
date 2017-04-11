@@ -10,6 +10,7 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 
+       "github.com/cratermoon/quip/proto"
        "github.com/cratermoon/quip/uuid"
 )
 
@@ -26,22 +27,13 @@ func (u uuidService) GetUUID() (string, error) {
 
 type uuidRequest struct{}
 
-func (u uuidResponse) Value() string {
-	return u.UUID
-}
-
-type uuidResponse struct {
-	Status string `json"status,omitempty"`
-	UUID string `json:"uuid"`
-}
-
 func makeUUIDEndpoint(us uuidService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		u, err := us.GetUUID()
 		if err != nil {
-			return uuidResponse{"err "+err.Error(), u}, nil
+			return proto.UUIDResponse{"err "+err.Error(), u}, nil
 		}
-		return uuidResponse{"ok", u}, nil
+		return proto.UUIDResponse{"ok", u}, nil
 	}
 }
 

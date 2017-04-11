@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/cratermoon/quip/aws"
+	"github.com/cratermoon/quip/proto"
 	"github.com/cratermoon/quip/quipdb"
 	"github.com/cratermoon/quip/signing"
 )
@@ -32,7 +34,7 @@ type QuipService interface {
 	Get() (string, error)
 	Count() (int64, error)
 	List() ([]string, error)
-	Add(quip string, sig string) (string, error)
+	Add(proto.AddQuipRequest) (string, error)
 }
 
 type quipService struct {
@@ -42,11 +44,6 @@ type quipService struct {
 
 type getRequest struct{}
 
-type getResponse struct {
-	Quip string `json:"quip"`
-	Err  string `json:"err,omitempty"`
-}
-
 type countRequest struct{}
 
 type countResponse struct {
@@ -55,26 +52,6 @@ type countResponse struct {
 }
 
 type listRequest struct{}
-
-type listResponse struct {
-	Quips []string `json:"quips"`
-	Err   string   `json:"err,omitempty"`
-}
-
-type addRequest struct {
-	Quip      string `json:"quip"`
-	Signature string `json:"sig"`
-	UUID      string `json:"uuid,omitempty"`
-}
-
-func (a addRequest) Value() string {
-	return a.UUID
-}
-
-type addResponse struct {
-	Name string `json:"name"`
-	Err  string `json:"err,omitempty"`
-}
 
 func (q quipService) Get() (string, error) {
 	begin := time.Now()
@@ -95,13 +72,21 @@ func (q quipService) List() ([]string, error) {
 	return q.repo.List()
 }
 
-func (q quipService) Add(quip string, sig string) (string, error) {
+func (q quipService) Add(req proto.AddQuipRequest) (string, error) {
+	quip := req.Quip
 	if len(quip) > maxQuipLength {
 		return "err", fmt.Errorf(
 			"Maximum quip length (%d) exceeded, got %d",
 			maxQuipLength, len(quip))
 	}
-	err := q.ver.Verify(quip, sig)
+	uuid :=  req.UUID
+	if uuid == "" {
+		log.Printf("Empty UUID\n")
+		return quip, fmt.Errorf("Empty UUID")
+	}
+	log.Printf("Checking signature on %s:%s\n", quip, uuid)
+	v := strings.Join([]string{quip,uuid}, ":")
+	err := q.ver.Verify(v, req.Signature)
 	if err != nil {
 		log.Printf("Signature error (%q) %s\n", quip, err.Error())
 		return quip, fmt.Errorf("Signature Error")
@@ -123,9 +108,9 @@ func makeGetEndpont(qs QuipService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		q, err := qs.Get()
 		if err != nil {
-			return getResponse{q, fmt.Sprintf("The Wisdom Service is unavailable: %s", err)}, nil
+			return proto.QuipResponse{q, fmt.Sprintf("The Wisdom Service is unavailable: %s", err)}, nil
 		}
-		return getResponse{q, ""}, nil
+		return proto.QuipResponse{q, ""}, nil
 	}
 
 }
@@ -134,24 +119,24 @@ func makeListEndpoint(qs QuipService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		q, err := qs.List()
 		if err != nil {
-			return listResponse{q, fmt.Sprintf("The Wisdom Service is unavailable: %s", err)}, nil
+			return proto.ListQuipResponse{q, fmt.Sprintf("The Wisdom Service is unavailable: %s", err)}, nil
 		}
-		return listResponse{q, ""}, nil
+		return proto.ListQuipResponse{q, ""}, nil
 	}
 }
 
 func makeAddEndpoint(qs QuipService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(addRequest)
+		req, ok := request.(proto.AddQuipRequest)
 		if !ok {
-			return addResponse{"", fmt.Sprintf("Experience tranquility")}, errors.New("type assertion failed")
+			return proto.AddQuipResponse{"", fmt.Sprintf("Experience tranquility")}, errors.New("type assertion failed")
 		}
-		name, err := qs.Add(req.Quip, req.Signature)
+		name, err := qs.Add(req)
 		if err != nil {
-			return addResponse{name, err.Error()}, nil
+			return proto.AddQuipResponse{name, err.Error()}, nil
 		}
 		log.Printf("New quip added: %q\n", req.Quip)
-		return addResponse{name, ""}, nil
+		return proto.AddQuipResponse{name, ""}, nil
 	}
 }
 
@@ -164,7 +149,7 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 }
 
 func decodeAddRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req addRequest
+	var req proto.AddQuipRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return nil, err
@@ -173,7 +158,7 @@ func decodeAddRequest(_ context.Context, r *http.Request) (interface{}, error) {
 }
 
 func encodeAddResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
-	resp, ok := response.(addResponse)
+	resp, ok := response.(proto.AddQuipResponse)
 	if !ok {
 		return errors.New("Response type assertion failed")
 	}
@@ -225,8 +210,10 @@ func NewQuipService(r *mux.Router, keyFName string) {
 		encodeResponse,
 	)
 
+	lookupMiddleware := MakeLookupMiddleware()
+
 	addhandler := httptransport.NewServer(
-		makeAddEndpoint(svc),
+		lookupMiddleware(makeAddEndpoint(svc)),
 		decodeAddRequest,
 		encodeAddResponse,
 	)

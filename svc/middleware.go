@@ -56,8 +56,8 @@ func MakeStorageMiddleware() endpoint.Middleware {
 				return resp, error
 			}
 			r, ok := resp.(TransientStorable)
-			log.Printf("Adding? %t\n", ok)
 			if ok {
+				log.Printf("Adding %s\n", r.Value())
 				add(r.Value())
 			}
 			return resp, error
@@ -72,6 +72,7 @@ func MakeLookupMiddleware() endpoint.Middleware {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
 			r, ok := request.(TransientStorable)
 			if ok {
+				log.Printf("removing %s\n", r.Value())
 				remove(r.Value())
 			}
 			return next(ctx, request)

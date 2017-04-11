@@ -7,18 +7,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"os"
 
 	"github.com/cratermoon/quip/aws"
+	"github.com/cratermoon/quip/proto"
 	"github.com/cratermoon/quip/signing"
 )
-
-type NewQuip struct {
-	Quip      string `json:"quip"`
-	Signature string `json:"sig"`
-}
 
 func usage(cmd string) {
 	fmt.Fprintf(os.Stderr, "usage: %s %q\n", cmd, "<quip>")
@@ -48,7 +45,16 @@ func main() {
 		fmt.Printf("Posting a new quip (%s) at %v\n", *quip, time.Now())
 	}
 
-	q := NewQuip{Quip: *quip}
+	uresp, err := http.Get("http://localhost:8080/uuid")
+	
+	//b, err := ioutil.ReadAll(uresp.Body)
+	var uuid proto.UUIDResponse
+	err = json.NewDecoder(uresp.Body).Decode(&uuid)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, err.Error())
+		return
+	}
+	q := proto.AddQuipRequest{Quip: *quip, UUID: uuid.UUID}
 
 	kit, err := aws.NewKit()
 	if err != nil {
@@ -63,7 +69,8 @@ func main() {
 	}
 
 	s := signing.Signer{Key: crt}
-	q.Signature, err = s.Sign(q.Quip)
+	v := strings.Join([]string{q.Quip, q.UUID}, ":")
+	q.Signature, err = s.Sign(v)
 	if err != nil {
 		fmt.Println(err)
 		return
