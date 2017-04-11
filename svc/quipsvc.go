@@ -64,6 +64,11 @@ type listResponse struct {
 type addRequest struct {
 	Quip      string `json:"quip"`
 	Signature string `json:"sig"`
+	UUID      string `json:"uuid,omitempty"`
+}
+
+func (a addRequest) Value() string {
+	return a.UUID
 }
 
 type addResponse struct {

@@ -26,6 +26,10 @@ func (u uuidService) GetUUID() (string, error) {
 
 type uuidRequest struct{}
 
+func (u uuidResponse) Value() string {
+	return u.UUID
+}
+
 type uuidResponse struct {
 	Status string `json"status,omitempty"`
 	UUID string `json:"uuid"`
@@ -41,34 +45,19 @@ func makeUUIDEndpoint(us uuidService) endpoint.Endpoint {
 	}
 }
 
-func makeCodeEndpoint(us uuidService) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		u, err := us.GetUUID()
-		if err != nil {
-			return uuidResponse{"err "+err.Error(), u}, nil
-		}
-		// TODO cache uuid as code
-		return uuidResponse{"ok", u}, nil
-	}
-}
 // NewUUIDService initializes the UUID Service
 func NewUUIDService(r *mux.Router) {
 
 	svc := uuidService{}
 
+	storeMiddleware := MakeStorageMiddleware()
 	uuidhandler := httptransport.NewServer(
-		makeUUIDEndpoint(svc),
+		storeMiddleware(makeUUIDEndpoint(svc)),
 		decodeUUIDRequest,
 		encodeUUIDResponse,
 	)
 
-	codehandler := httptransport.NewServer(
-		makeCodeEndpoint(svc),
-		decodeUUIDRequest,
-		encodeUUIDResponse,
-	)
 	r.Methods("GET").Path("/uuid").Handler(uuidhandler)
-	r.Methods("GET").Path("/code").Handler(codehandler)
 }
 
 func decodeUUIDRequest(_ context.Context, r *http.Request) (interface{}, error) {
