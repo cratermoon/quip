@@ -4,6 +4,7 @@ package aws
 import (
 	"errors"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -64,7 +65,6 @@ func (k *Kit) S3Object(keyname string) ([]byte, error) {
 // SDBSelectRandom will return a randomly selected value from the results of query
 func (k *Kit) SDBSelectRandom(query string) (string, error) {
 	params := &simpledb.SelectInput{
-		// "select text from `quips`"
 		SelectExpression: aws.String(query),
 	}
 	resp, err := k.sdb.Select(params)
@@ -114,8 +114,36 @@ func (k *Kit) SDBList(attribute string, domain string) ([]string, error) {
 	return quips, nil
 }
 
+func (k *Kit) SDBTakeFirst(attribute string, domain string) (string, error) {
+	q := fmt.Sprintf("select %s from `%s` limit 1", attribute, domain)
+	params := &simpledb.SelectInput{
+		SelectExpression: aws.String(q),
+	}
+	resp, err := k.sdb.Select(params)
+
+	if err != nil {
+		return "", err
+	}
+	if len(resp.Items) != 1 {
+		return "", errors.New("Experience tranquility")
+	}
+	attrs := resp.Items[0].Attributes
+	name := resp.Items[0].Name
+	attr := attrs[0]
+	log.Printf("Taking %s: %s", *name, *attr.Value)
+	delParams := &simpledb.DeleteAttributesInput{
+		DomainName: aws.String(domain),
+		ItemName:   aws.String(*name),
+	}
+	k.sdb.DeleteAttributes(delParams)
+	return *attr.Value, nil
+}
+
 // SDBAdd places a new value in the domain at given attribute name
-func (k *Kit) SDBAdd(attribute string, value string) (string, error) {
+func (k *Kit) SDBAdd(attribute string, value string, domain string) (string, error) {
+	if domain == "" {
+		domain = defaultSDBDomain
+	}
 	id := &simpledb.ReplaceableAttribute{
 		Name:  aws.String("id"),
 		Value: aws.String(strconv.FormatInt(time.Now().Unix(), 10)),
@@ -129,11 +157,11 @@ func (k *Kit) SDBAdd(attribute string, value string) (string, error) {
 	attributes[1] = text
 	params := &simpledb.PutAttributesInput{
 		Attributes: attributes,
-		DomainName: aws.String(defaultSDBDomain),
+		DomainName: aws.String(domain),
 		ItemName:   aws.String(*id.Value),
 	}
 	// according to Amazon's documentation, the returned PutAttributesOutput
-	// is an opaque struct anyway
+	// is an opaque struct anyway, so no point in assigning it
 	_, err := k.sdb.PutAttributes(params)
 	if err != nil {
 		return "", err

@@ -1,7 +1,7 @@
 package job
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/jasonlvhit/gocron"
 
@@ -9,27 +9,28 @@ import (
 )
 
 func post() {
-	fmt.Println("I am runnning task.")
+	log.Println("Post job running")
 	var quip string
 	r, err := quipdb.NewQuipRepo()
 	if err != nil {
+		log.Println("Post job error", err.Error())
 		return
 	}
-	// check newquips
-	// if newquips not empty
-	//   get quip
-        //   move quip to archive
-        // else
-	quip, err = r.Quip()
-	if err != nil {
-		return
+	// check newquips, ignoring errors
+	quip, _ = r.TakeNew()
+	// if we get nothing, grab a random one from the archive
+	if quip == "" {
+		log.Println("Nothing new under the sun")
+		quip, err = r.Quip()
+	} else {
+		r.Add(quip)
 	}
-	fmt.Println("posting quip", quip)
-}
 
+	log.Println("Posting quip", quip)
+}
 
 func schedule() {
 	gocron.Every(1).Day().At("15:00").Do(post)
 	s := gocron.NewScheduler()
-	<- s.Start()
+	<-s.Start()
 }
