@@ -145,6 +145,7 @@ func decodeRequest(_ context.Context, r *http.Request) (interface{}, error) {
 }
 
 func encodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
+	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(response)
 }
 
@@ -162,6 +163,7 @@ func encodeAddResponse(_ context.Context, w http.ResponseWriter, response interf
 	if !ok {
 		return errors.New("Response type assertion failed")
 	}
+	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(resp)
 }
 

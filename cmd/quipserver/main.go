@@ -15,6 +15,9 @@ import (
 )
 
 var (
+	Version string
+	Build   string
+
 	keyFile       = flag.String("k", "quip.crt", "private key cert")
 	port          = flag.String("p", "8080", "port to serve on")
 	verbose       = flag.Bool("v", false, "be verbose")
@@ -23,7 +26,7 @@ var (
 )
 
 func main() {
-
+	fmt.Printf("Version: %s Build: %s\n", Version, Build)
 	flag.Parse()
 
 	rand.Seed(time.Now().UnixNano() * int64(os.Getpid()))

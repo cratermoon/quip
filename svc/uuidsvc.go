@@ -57,5 +57,6 @@ func decodeUUIDRequest(_ context.Context, r *http.Request) (interface{}, error) 
 }
 
 func encodeUUIDResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
+	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(response)
 }
