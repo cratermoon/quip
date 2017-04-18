@@ -17,10 +17,10 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 
-	"github.com/cratermoon/quip/aws"
 	"github.com/cratermoon/quip/proto"
 	"github.com/cratermoon/quip/quipdb"
 	"github.com/cratermoon/quip/signing"
+	"github.com/cratermoon/quip/storage"
 )
 
 var quipsServed metrics.Counter
@@ -176,12 +176,12 @@ func NewQuipService(r *mux.Router, keyFName string) {
 		return
 	}
 
-	kit, err := aws.NewKit()
+	kit, err := storage.NewKit()
 	if err != nil {
 		log.Println("Error starting quip service", err)
 		return
 	}
-	crt, err := kit.S3Object(keyFName)
+	crt, err := kit.FileObject(keyFName)
 
 	if err != nil {
 		log.Println("Error starting quip service", err)

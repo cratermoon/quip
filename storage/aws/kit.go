@@ -49,8 +49,8 @@ func NewKit() (*Kit, error) {
 	return &kit, nil
 }
 
-// S3Object returns the content at keyname in the default bucket
-func (k *Kit) Filebject(keyname string) ([]byte, error) {
+// FileObject returns the content at keyname in the default bucket
+func (k *Kit) FileObject(keyname string) ([]byte, error) {
 	params := &s3.GetObjectInput{
 		Bucket: aws.String(defaultS3Bucket),
 		Key:    aws.String(keyname),
