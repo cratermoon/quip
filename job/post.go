@@ -39,7 +39,7 @@ func post() {
 	t.Tweet(quip)
 }
 
-func schedule() {
+func Schedule() {
 	gocron.Every(1).Day().At("15:00").Do(post)
 	s := gocron.NewScheduler()
 	<-s.Start()

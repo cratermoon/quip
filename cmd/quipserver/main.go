@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/cratermoon/quip/job"
 	"github.com/cratermoon/quip/quipdb"
 	"github.com/cratermoon/quip/server"
 )
@@ -46,6 +47,8 @@ func main() {
 
 	author.Set("Steven E. Newton")
 	authorContact.Set("snewton@treetopllc.com")
+
+	go job.Schedule()
 
 	h := server.BuildServices(*keyFile)
 
