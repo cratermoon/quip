@@ -10,7 +10,7 @@ import (
 
 //QuipRepo generates short, witty, quips from a repository
 type QuipRepo struct {
-	kit *storage.Kit
+	kit storage.Kit
 }
 
 // Quip returns a single short, witty, quip from the archive

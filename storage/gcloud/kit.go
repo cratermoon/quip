@@ -1,19 +1,11 @@
 // Package gcloud implements basic storage functions using Google Cloud services
 package gcloud
 
-import (
-	"google.golang.org/appengine/datastore"
-	"cloud.google.com/go/storage"
-)
-// StorageKit is an interface to basic storage functions
-type Kit struct {
-	ctx *context.Context
-	datastore datastore.
-	cloudstore *storage.Client
-}
+// Kit is an interface to basic storage functions
+type Kit struct{}
 
 func NewKit() (*Kit, error) {
-	return &Kit{}
+	return &Kit{}, nil
 }
 
 func (k *Kit) FileObject(name string) ([]byte, error) {

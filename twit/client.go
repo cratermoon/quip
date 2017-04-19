@@ -1,16 +1,18 @@
 package twit
 
 import (
-
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"log"
 
 	"github.com/ChimeraCoder/anaconda"
+
+	"github.com/cratermoon/quip/storage"
 )
 
 type Twit struct {
 	api *anaconda.TwitterApi
+	kit *storage.Kit
 }
 
 type keys struct {
@@ -21,7 +23,12 @@ type keys struct {
 }
 
 func NewTwit() *Twit {
-	raw, err := ioutil.ReadFile("./keys.json")
+	kit, err := storage.NewKit()
+	if err != nil {
+		log.Println("Error starting quip service", err)
+		return nil
+	}
+	raw, err := kit.FileObject("keys.json")
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil
@@ -30,15 +37,21 @@ func NewTwit() *Twit {
 	var k keys
 	json.Unmarshal(raw, &k)
 
-
 	anaconda.SetConsumerKey(k.Key)
 	anaconda.SetConsumerSecret(k.Secret)
 	api := anaconda.NewTwitterApi(k.Token, k.TokenSecret)
-	t := Twit{api}
+	t := Twit{api: api}
 	return &t
 }
 
-func (t *Twit) tweet(status string) (int64, error) {
+// Tweet posts the given status string to twitter
+func (t *Twit) Tweet(status string) (int64, error) {
 	tweet, err := t.api.PostTweet(status, nil)
+	return tweet.Id, err
+}
+
+// Delete removes the status with the given id from the twitter timeline
+func (t *Twit) Delete(id int64) (int64, error) {
+	tweet, err := t.api.DeleteTweet(id, false)
 	return tweet.Id, err
 }
