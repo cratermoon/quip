@@ -1,10 +1,6 @@
 package quipdb
 
 import (
-	"math/rand"
-	"os"
-	"time"
-
 	"github.com/cratermoon/quip/storage"
 )
 
@@ -57,7 +53,6 @@ func (q QuipRepo) Add(quip string) (string, error) {
 
 // NewQuipRepo returns a new quip repository
 func NewQuipRepo() (QuipRepo, error) {
-	rand.Seed(time.Now().UnixNano() * int64(os.Getpid()))
 
 	var qr QuipRepo
 

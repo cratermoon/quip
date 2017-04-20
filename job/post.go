@@ -22,6 +22,9 @@ func post() {
 	// if there are new ones, and defer actually removing
 	// a quip from the new list until we've successfully
 	// posted it
+	// idea: TakeNew() creates (and returns) a channel,
+	// waits for  a little while for message on that channel
+        // upon message reception, delete the quip
 	quip, _ = r.TakeNew()
 	// if we get nothing, grab a random one from the archive
 	if quip == "" {
@@ -37,6 +40,8 @@ func post() {
 		log.Println("Error creating twitter kit")
 	}
 	t.Tweet(quip)
+	// assuming we got here without error, tell the quipdb
+	// to move the quip from newquips to the archive
 }
 
 func Schedule() {

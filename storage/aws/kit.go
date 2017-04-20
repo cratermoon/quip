@@ -2,10 +2,11 @@
 package aws
 
 import (
+	"crypto/rand"
 	"errors"
 	"io/ioutil"
+	"math/big"
 	"log"
-	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -68,14 +69,19 @@ func (k *Kit) DBSelectRandom(query string) (string, error) {
 		SelectExpression: aws.String(query),
 	}
 	resp, err := k.sdb.Select(params)
-
 	if err != nil {
 		return "Experience tranquility", err
 	}
+
 	if len(resp.Items) == 0 {
 		return "", errors.New("Experience tranquility")
 	}
-	i := rand.Intn(len(resp.Items))
+	// probably overkill
+	nBig, err := rand.Int(rand.Reader, big.NewInt(int64(len(resp.Items))))
+    	if err != nil {
+		return "Experience tranquility", err
+    	}
+   	i := nBig.Int64()
 	return strings.TrimSpace(*resp.Items[i].Attributes[0].Value), nil
 }
 
