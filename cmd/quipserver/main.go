@@ -17,7 +17,7 @@ import (
 
 type options struct {
 	keyFile string
-	port string
+	port    string
 	verbose bool
 }
 

@@ -24,7 +24,7 @@ func post() {
 	// posted it
 	// idea: TakeNew() creates (and returns) a channel,
 	// waits for  a little while for message on that channel
-        // upon message reception, delete the quip
+	// upon message reception, delete the quip
 	quip, _ = r.TakeNew()
 	// if we get nothing, grab a random one from the archive
 	if quip == "" {

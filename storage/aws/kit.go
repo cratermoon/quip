@@ -5,8 +5,8 @@ import (
 	"crypto/rand"
 	"errors"
 	"io/ioutil"
-	"math/big"
 	"log"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -78,10 +78,10 @@ func (k *Kit) DBSelectRandom(query string) (string, error) {
 	}
 	// probably overkill
 	nBig, err := rand.Int(rand.Reader, big.NewInt(int64(len(resp.Items))))
-    	if err != nil {
+	if err != nil {
 		return "Experience tranquility", err
-    	}
-   	i := nBig.Int64()
+	}
+	i := nBig.Int64()
 	return strings.TrimSpace(*resp.Items[i].Attributes[0].Value), nil
 }
 
