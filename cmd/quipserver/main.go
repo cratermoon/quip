@@ -61,7 +61,7 @@ func main() {
 	}
 
 	author.Set("Steven E. Newton")
-	authorContact.Set("snewton@treetopllc.com")
+	authorContact.Set("cratermoon@gmail.com")
 
 	go job.Schedule()
 
