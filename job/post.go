@@ -9,8 +9,9 @@ import (
 	"github.com/cratermoon/quip/quipdb"
 	"github.com/cratermoon/quip/twit"
 )
+
 var (
-	scheduler        = expvar.NewMap("scheduler")
+	schedvars = expvar.NewMap("scheduler")
 )
 
 type Status struct {
@@ -55,16 +56,18 @@ func post() {
 		log.Println("Error creating twitter kit")
 	}
 	t.Tweet(quip)
-	scheduler.Add("posts", 1)
+	schedvars.Add("posts", 1)
 	// assuming we got here without error, tell the quipdb
 	// to move the quip from newquips to the archive
 }
 
 func Schedule() {
+	log.Print("Scheduler starting")
 	gocron.Every(1).Day().At("15:00").Do(post)
 	s := gocron.NewScheduler()
 	st := Status{true}
-	scheduler.Set("status", st)
-	scheduler.Add("posts", 0)
+	schedvars.Set("status", st)
+	schedvars.Add("posts", 0)
+	log.Printf("Job status: %s, posts %s", schedvars.Get("status").String(), schedvars.Get("posts").String())
 	<-s.Start()
 }

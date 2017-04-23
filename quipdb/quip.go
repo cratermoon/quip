@@ -1,6 +1,9 @@
 package quipdb
 
 import (
+	"log"
+	"time"
+
 	"github.com/cratermoon/quip/storage"
 )
 
@@ -27,7 +30,18 @@ func (q QuipRepo) TakeNew() (string, error) {
 	if err != nil {
 		return resp, err
 	}
-	defer q.kit.DBAdd("text", resp, "quips")
+	cancel := make(chan bool)
+	go func() {
+		select {
+		case <-cancel:
+			close(cancel)
+			q.kit.DBAdd("text", resp, "quips")
+		case <-time.After(1 * time.Second):
+			log.Print("TakeNew timed out")
+			// return it to the newquips bucket
+			q.kit.DBAdd("text", resp, "newquips")
+		}
+	}()
 	return resp, err
 }
 
