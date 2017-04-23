@@ -25,10 +25,10 @@ func (q QuipRepo) Quip() (string, error) {
 
 // TakeNew will remove and return the first quip in the new list
 // and add it to the archive
-func (q QuipRepo) TakeNew() (string, error) {
+func (q QuipRepo) TakeNew() (string, chan bool, error) {
 	resp, err := q.kit.DBTakeFirst("text", "newquips")
 	if err != nil {
-		return resp, err
+		return resp, nil, err
 	}
 	cancel := make(chan bool)
 	go func() {
@@ -36,13 +36,14 @@ func (q QuipRepo) TakeNew() (string, error) {
 		case <-cancel:
 			close(cancel)
 			q.kit.DBAdd("text", resp, "quips")
+			log.Print("TakeNew done, quip moved to archive")
 		case <-time.After(1 * time.Second):
-			log.Print("TakeNew timed out")
+			log.Print("TakeNew timed out, returning quip to new list")
 			// return it to the newquips bucket
 			q.kit.DBAdd("text", resp, "newquips")
 		}
 	}()
-	return resp, err
+	return resp, cancel, nil
 }
 
 // Count returns the number of quips available in the archive

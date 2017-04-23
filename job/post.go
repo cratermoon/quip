@@ -34,21 +34,16 @@ func post() {
 		return
 	}
 	// check newquips, ignoring errors
-	// we should probably just check to see
-	// if there are new ones, and defer actually removing
-	// a quip from the new list until we've successfully
-	// posted it
-	// idea: TakeNew() creates (and returns) a channel,
+	// TakeNew() creates (and returns) a channel,
 	// waits for  a little while for message on that channel
 	// upon message reception, delete the quip
-	quip, _ = r.TakeNew()
+	quip, c, _ := r.TakeNew()
 	// if we get nothing, grab a random one from the archive
 	if quip == "" {
 		log.Println("Nothing new under the sun")
 		quip, err = r.Quip()
 	} else {
 		// don't add it to the archive until we are done
-		defer r.Add(quip)
 	}
 	t := twit.NewTwit()
 
@@ -57,8 +52,14 @@ func post() {
 	}
 	t.Tweet(quip)
 	schedvars.Add("posts", 1)
+	s, err := r.Add(quip)
+	if (err != nil) {
+		log.Printf("Error adding quip %s to archive %v", s, err)
+		return
+	}
 	// assuming we got here without error, tell the quipdb
-	// to move the quip from newquips to the archive
+	// to cancel moving the quip back to the new list
+	c<-true
 }
 
 func Schedule() {
