@@ -64,10 +64,9 @@ func post() {
 func Schedule() {
 	log.Print("Scheduler starting")
 	gocron.Every(1).Day().At("15:00").Do(post)
-	s := gocron.NewScheduler()
 	st := Status{true}
 	schedvars.Set("status", st)
 	schedvars.Add("posts", 0)
 	log.Printf("Job status: %s, posts %s", schedvars.Get("status").String(), schedvars.Get("posts").String())
-	<-s.Start()
+	<-gocron.Start()
 }
