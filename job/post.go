@@ -42,8 +42,6 @@ func post() {
 	if quip == "" {
 		log.Println("Nothing new under the sun")
 		quip, err = r.Quip()
-	} else {
-		// don't add it to the archive until we are done
 	}
 	t := twit.NewTwit()
 
@@ -52,14 +50,16 @@ func post() {
 	}
 	t.Tweet(quip)
 	schedvars.Add("posts", 1)
-	s, err := r.Add(quip)
-	if (err != nil) {
-		log.Printf("Error adding quip %s to archive %v", s, err)
-		return
+	if c != nil {
+		s, err := r.Add(quip)
+		if err != nil {
+			log.Printf("Error adding quip %s to archive %v", s, err)
+			return
+		}
+		// assuming we got here without error, tell the quipdb
+		// to cancel moving the quip back to the new list
+		c <- true
 	}
-	// assuming we got here without error, tell the quipdb
-	// to cancel moving the quip back to the new list
-	c<-true
 }
 
 func Schedule() {

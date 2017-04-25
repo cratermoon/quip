@@ -5,10 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/cratermoon/quip/job"
 	"github.com/cratermoon/quip/quipdb"
@@ -45,7 +42,8 @@ func main() {
 		fmt.Printf("Version: %s Build: %s\n", Version, Build)
 	}
 
-	rand.Seed(time.Now().UnixNano() * int64(os.Getpid()))
+	expvar.NewString("version").Set(Version)
+	expvar.NewString("build").Set(Build)
 
 	quipRepo, err := quipdb.NewQuipRepo()
 	if err != nil {
