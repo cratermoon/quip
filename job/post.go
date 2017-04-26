@@ -48,7 +48,11 @@ func post() {
 	if t == nil {
 		log.Println("Error creating twitter kit")
 	}
-	t.Tweet(quip)
+	id, err := t.Tweet(quip)
+	if err != nil {
+		log.Printf("Error tweeting quip %s (%d) %s", quip, id, err)
+		return
+	}
 	schedvars.Add("posts", 1)
 	if c != nil {
 		s, err := r.Add(quip)
