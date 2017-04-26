@@ -48,6 +48,7 @@ func post() {
 	if t == nil {
 		log.Println("Error creating twitter kit")
 	}
+	quip = quip + " #qotd"
 	id, err := t.Tweet(quip)
 	if err != nil {
 		log.Printf("Error tweeting quip %s (%d) %s", quip, id, err)
