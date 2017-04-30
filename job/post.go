@@ -51,7 +51,9 @@ func post() {
 	quip = quip + " #qotd"
 	id, err := t.Tweet(quip)
 	if err != nil {
-		log.Printf("Error tweeting quip %s (%d) %s", quip, id, err)
+		log.Printf("Error tweeting quip %q (%d) %s", quip, id, err)
+		schedvars.Add("post-errors", 1)
+		schedvars.Set("tweet-err", expvar.NewString(err.Error()))
 		return
 	}
 	schedvars.Add("posts", 1)
@@ -73,6 +75,7 @@ func Schedule() {
 	st := Status{true}
 	schedvars.Set("status", st)
 	schedvars.Add("posts", 0)
+	schedvars.Add("post-errors", 0)
 	log.Printf("Job status: %s, posts %s", schedvars.Get("status").String(), schedvars.Get("posts").String())
 	<-gocron.Start()
 }
