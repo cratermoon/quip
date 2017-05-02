@@ -12,6 +12,7 @@ import (
 
 var (
 	schedvars = expvar.NewMap("scheduler")
+	lastErrMsg expvar.String
 )
 
 type Status struct {
@@ -53,7 +54,7 @@ func post() {
 	if err != nil {
 		log.Printf("Error tweeting quip %q (%d) %s", quip, id, err)
 		schedvars.Add("post-errors", 1)
-		schedvars.Set("tweet-err", expvar.NewString(err.Error()))
+		lastErrMsg.Set(err.Error())
 		return
 	}
 	schedvars.Add("posts", 1)
@@ -74,8 +75,11 @@ func Schedule() {
 	gocron.Every(1).Day().At("15:00").Do(post)
 	st := Status{true}
 	schedvars.Set("status", st)
+	schedvars.Set("tweet-error", &lastErrMsg)
+	lastErrMsg.Set("none")
 	schedvars.Add("posts", 0)
 	schedvars.Add("post-errors", 0)
 	log.Printf("Job status: %s, posts %s", schedvars.Get("status").String(), schedvars.Get("posts").String())
 	<-gocron.Start()
+	st.running = false
 }
