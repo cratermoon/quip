@@ -2,7 +2,11 @@ package job
 
 import (
 	"expvar"
+	"crypto/rand"
 	"log"
+	"math"
+	"math/big"
+	"time"
 
 	"github.com/jasonlvhit/gocron"
 
@@ -11,6 +15,7 @@ import (
 )
 
 var (
+	retries = 0
 	schedvars = expvar.NewMap("scheduler")
 	lastErrMsg expvar.String
 )
@@ -25,6 +30,7 @@ func (s Status) String() string {
 	}
 	return `"stopped"`
 }
+
 
 func post() {
 	log.Println("Post job running")
@@ -55,6 +61,22 @@ func post() {
 		log.Printf("Error tweeting quip %q (%d) %s", quip, id, err)
 		schedvars.Add("post-errors", 1)
 		lastErrMsg.Set(err.Error())
+		// truncated binary exponential backoff https://en.wikipedia.org/wiki/Exponential_backoff#Binary_exponential_backoff
+		if retries > 10 {
+			retries = 0
+			return
+		}
+		slot := math.Pow(2, float64(retries))
+		nBig, err := rand.Int(rand.Reader, big.NewInt(int64(slot)))
+    		if err != nil {
+			log.Printf(`¯\_(ツ)_/¯`)
+			// ¯\_(ツ)_/¯
+			return
+    		}
+    		n := nBig.Int64()
+		time.Sleep((time.Duration(n) * time.Second)/10)
+		retries++
+		post()
 		return
 	}
 	schedvars.Add("posts", 1)
@@ -68,6 +90,7 @@ func post() {
 		// to cancel moving the quip back to the new list
 		c <- true
 	}
+	retries = 0
 }
 
 func Schedule() {

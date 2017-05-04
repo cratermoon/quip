@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/cratermoon/quip/aws"
+	"github.com/cratermoon/quip/storage/aws"
 )
 
 const (
@@ -52,7 +52,7 @@ func main() {
 		fmt.Printf("Adding new quip '%s' as attribute 'text'\n", *quip)
 		return
 	}
-	id, err := kit.SDBAdd("text", *quip)
+	id, err := kit.DBAdd("text", *quip, "newquips")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
