@@ -1,0 +1,50 @@
+package signing
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+const pss_testCert = `-----BEGIN CERTIFICATE-----
+MIIDojCCAwugAwIBAgIJAPt7jn3VJTSBMA0GCSqGSIb3DQEBBQUAMIGTMQswCQYD
+VQQGEwJVUzEPMA0GA1UECBMGT3JlZ29uMREwDwYDVQQHEwhQb3J0bGFuZDEgMB4G
+A1UEChMXQ3JhdGVyIE1vb24gRGV2ZWxvcG1lbnQxGTAXBgNVBAMTEFN0ZXZlbiBF
+LiBOZXd0b24xIzAhBgkqhkiG9w0BCQEWFGNyYXRlcm1vb25AZ21haWwuY29tMB4X
+DTE3MDQwMTE3Mjk0MFoXDTE3MDUwMTE3Mjk0MFowgZMxCzAJBgNVBAYTAlVTMQ8w
+DQYDVQQIEwZPcmVnb24xETAPBgNVBAcTCFBvcnRsYW5kMSAwHgYDVQQKExdDcmF0
+ZXIgTW9vbiBEZXZlbG9wbWVudDEZMBcGA1UEAxMQU3RldmVuIEUuIE5ld3RvbjEj
+MCEGCSqGSIb3DQEJARYUY3JhdGVybW9vbkBnbWFpbC5jb20wgZ8wDQYJKoZIhvcN
+AQEBBQADgY0AMIGJAoGBAM27h90knwUOWl1p38jvwaoKu2dwBbogM4eHEuJxkkBu
+LJSyD1DL7Wnf7QpUUZJajei4GAgYfvAlqWf4DCpi0ggAk6Y2xtizc6Jmx3nuLHmn
+I2APxZ4KYBMbvqO5I0iv4Rnpv9kKSkzBV9pgXuuAFujrDXuaTsrFnn/Ty7CQ3s6J
+AgMBAAGjgfswgfgwHQYDVR0OBBYEFF1mzMW03LyzoEAd6WESwWVaUEyLMIHIBgNV
+HSMEgcAwgb2AFF1mzMW03LyzoEAd6WESwWVaUEyLoYGZpIGWMIGTMQswCQYDVQQG
+EwJVUzEPMA0GA1UECBMGT3JlZ29uMREwDwYDVQQHEwhQb3J0bGFuZDEgMB4GA1UE
+ChMXQ3JhdGVyIE1vb24gRGV2ZWxvcG1lbnQxGTAXBgNVBAMTEFN0ZXZlbiBFLiBO
+ZXd0b24xIzAhBgkqhkiG9w0BCQEWFGNyYXRlcm1vb25AZ21haWwuY29tggkA+3uO
+fdUlNIEwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOBgQAHSkvDTWJq7EKG
+LFfaJGgnpbEqZSHSg9tVGEag7qqwxBbaS3R8VsN5nvlEA/Ubi7292164hlpvDfrb
+vOPEvEMsB0gpUlc7jD14KPHOShXszUORKUf8o5vpdiQfGbUfMC2cspCz6BXqri19
+DlZI9R1DscwrW62vmoMJFecrCuJx8g==
+-----END CERTIFICATE-----`
+
+var pv PSSVerifier
+
+func TestPSSVerifyFail(t *testing.T) {
+	text := "this is a test"
+	expectedSigHex := "b072de1ae1a54117d2003519832c1053fbd88d3a978bc0b6088ff677991faa1947ad77a60a253585aabb5f818c9261318fc0fb14832597827ccb54ebbbd0d0142e0b9574f352d4417fb32ab4c792cfe3f571b7968c346f9070eb04cfac8fad7dfbbcc671ee8c7db0d04bdca0e8a40cc44bedcaf0bbceb8458a5218975262079d"
+
+	assert.Error(t, v.Verify(text, expectedSigHex), "Signature verification should fail")
+}
+
+func TestPSSVerify(t *testing.T) {
+	text := "this is a test"
+	expectedSigHex := "b072de1ae1a54117d2003519832c1053fbd88d3a978bc0b6088ff677991faa1947ad77a60a253585aabb5f818c9261318fc0fb14832597827ccb54ebbbd0d0142e0b9574f352d4417fb32ab4c792cfe3f571b7968c346f9070eb04cfac8fad7dfbbcc671ee8c7db0d04bdca0e8a40cc44bedcaf0bbceb8458a5218975262079d"
+
+	assert.NoError(t, v.Verify(text, expectedSigHex), "Signature verification failed")
+}
+
+func init() {
+	pv = PSSVerifier{[]byte(pss_testCert)}
+}
