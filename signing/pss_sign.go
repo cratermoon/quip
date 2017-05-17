@@ -13,7 +13,7 @@ type PSSSigner struct {
 }
 
 func (s PSSSigner) Sign(text string) (string, error) {
-	rsaPrivateKey, err := parseKey(s.Key)
+	rsaPrivateKey, err := parseRSAKey(s.Key)
 	if err != nil {
 		return "", err
 	}
@@ -22,7 +22,7 @@ func (s PSSSigner) Sign(text string) (string, error) {
 	h.Write([]byte(text))
 	hashed := h.Sum(nil)
 
-	sig, err := rsa.SignPSS(rand.Reader, rsaPrivateKey, crypto.SHA512, hashed[:], nil)
+	sig, err := rsa.SignPSS(rand.Reader, rsaPrivateKey, crypto.SHA512, hashed, nil)
 	if err != nil {
 		return "", err
 	}
