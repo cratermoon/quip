@@ -1,8 +1,8 @@
 package job
 
 import (
-	"expvar"
 	"crypto/rand"
+	"expvar"
 	"log"
 	"math"
 	"math/big"
@@ -15,8 +15,7 @@ import (
 )
 
 var (
-	retries = 0
-	schedvars = expvar.NewMap("scheduler")
+	schedvars  = expvar.NewMap("scheduler")
 	lastErrMsg expvar.String
 )
 
@@ -31,32 +30,8 @@ func (s Status) String() string {
 	return `"stopped"`
 }
 
-
-func post() {
-	log.Println("Post job running")
-	var quip string
-	r, err := quipdb.NewQuipRepo()
-	if err != nil {
-		log.Println("Post job error", err.Error())
-		return
-	}
-	// check newquips, ignoring errors
-	// TakeNew() creates (and returns) a channel,
-	// waits for  a little while for message on that channel
-	// upon message reception, delete the quip
-	quip, c, _ := r.TakeNew()
-	// if we get nothing, grab a random one from the archive
-	if quip == "" {
-		log.Println("Nothing new under the sun")
-		quip, err = r.Quip()
-	}
-	t := twit.NewTwit()
-
-	if t == nil {
-		log.Println("Error creating twitter kit")
-	}
-	quip = quip + " #qotd"
-	id, err := t.Tweet(quip)
+func try(t *twit.Twit, quip string, retries int, done chan bool) {
+	id, err := t.Tweet(quip + " #qotd")
 	if err != nil {
 		log.Printf("Error tweeting quip %q (%d) %s", quip, id, err)
 		schedvars.Add("post-errors", 1)
@@ -66,19 +41,50 @@ func post() {
 			retries = 0
 			return
 		}
-		slot := math.Pow(2, float64(retries))
+		slot := math.Pow(2, float64(retries+1))
 		nBig, err := rand.Int(rand.Reader, big.NewInt(int64(slot)))
-    		if err != nil {
+		if err != nil {
 			log.Printf(`¯\_(ツ)_/¯`)
 			// ¯\_(ツ)_/¯
 			return
-    		}
-    		n := nBig.Int64()
-		time.Sleep((time.Duration(n) * time.Second)/10)
+		}
+		n := nBig.Int64()
+		time.Sleep((time.Duration(float64(n))*time.Second)/10 + time.Microsecond)
 		retries++
-		post()
+		try(t, quip, retries, done)
 		return
 	}
+	if done != nil {
+		done <- true
+	}
+}
+
+func post() {
+	log.Println("Post job running")
+	var quip string
+	r, err := quipdb.NewQuipRepo()
+	if err != nil {
+		log.Println("Post job error", err.Error())
+		return
+	}
+	t := twit.NewTwit()
+
+	if t == nil {
+		log.Println("Error creating twitter kit")
+	}
+
+	// check newquips, ignoring errors
+	// TakeNew() creates (and returns) a channel,
+	// waits for  a little while for message on that channel
+	// upon message reception, delete the quip
+	quip, c, _ := r.TakeNew()
+	defer close(c)
+	// if we get nothing, grab a random one from the archive
+	if quip == "" {
+		log.Println("Nothing new under the sun")
+		quip, err = r.Quip()
+	}
+	try(t, quip, 0, c)
 	schedvars.Add("posts", 1)
 	if c != nil {
 		s, err := r.Add(quip)
@@ -90,7 +96,6 @@ func post() {
 		// to cancel moving the quip back to the new list
 		c <- true
 	}
-	retries = 0
 }
 
 func Schedule() {

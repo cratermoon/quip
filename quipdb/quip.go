@@ -31,17 +31,19 @@ func (q QuipRepo) TakeNew() (string, chan bool, error) {
 		return resp, nil, err
 	}
 	cancel := make(chan bool)
+	// https://blog.golang.org/go-concurrency-patterns-timing-out-and
 	go func() {
-		select {
-		case <-cancel:
-			close(cancel)
-			q.kit.DBAdd("text", resp, "quips")
-			log.Print("TakeNew done, quip moved to archive")
-		case <-time.After(1 * time.Second):
-			log.Print("TakeNew timed out, returning quip to new list")
-			// return it to the newquips bucket
-			q.kit.DBAdd("text", resp, "newquips")
+		for done := range cancel {
+			if done {
+				q.kit.DBAdd("text", resp, "quips")
+				log.Print("TakeNew done, quip moved to archive")
+				return
+			}
+			time.Sleep(time.Second)
 		}
+		log.Print("TakeNew timed out, returning quip to new list")
+		// return it to the newquips bucket
+		q.kit.DBAdd("text", resp, "newquips")
 	}()
 	return resp, cancel, nil
 }
