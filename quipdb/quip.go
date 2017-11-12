@@ -26,11 +26,11 @@ func (q QuipRepo) Quip() (string, error) {
 // TakeNew will remove and return the first quip in the new list
 // and add it to the archive
 func (q QuipRepo) TakeNew() (string, chan bool, error) {
+	cancel := make(chan bool)
 	resp, err := q.kit.DBTakeFirst("text", "newquips")
 	if err != nil {
-		return resp, nil, err
+		return resp, cancel, err
 	}
-	cancel := make(chan bool)
 	// https://blog.golang.org/go-concurrency-patterns-timing-out-and
 	go func() {
 		for done := range cancel {

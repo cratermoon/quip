@@ -78,7 +78,9 @@ func post() {
 	// waits for  a little while for message on that channel
 	// upon message reception, delete the quip
 	quip, c, _ := r.TakeNew()
-	defer close(c)
+	if c != nil {
+		defer close(c)
+	}
 	// if we get nothing, grab a random one from the archive
 	if quip == "" {
 		log.Println("Nothing new under the sun")
