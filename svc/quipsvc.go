@@ -27,7 +27,7 @@ var quipsServed metrics.Counter
 var quipLatency metrics.Histogram
 
 // maxQuipLength is the longest quip allowed, leaving space for hashtag
-const maxQuipLength = 134
+const maxQuipLength = 274
 
 // QuipService provides a quip server
 type QuipService interface {
