@@ -1,8 +1,8 @@
 package job
 
 import (
-	"expvar"
 	"crypto/rand"
+	"expvar"
 	"log"
 	"math"
 	"math/big"
@@ -15,8 +15,7 @@ import (
 )
 
 var (
-	retries = 0
-	schedvars = expvar.NewMap("scheduler")
+	schedvars  = expvar.NewMap("scheduler")
 	lastErrMsg expvar.String
 )
 
@@ -31,66 +30,57 @@ func (s Status) String() string {
 	return `"stopped"`
 }
 
-
 func post() {
 	log.Println("Post job running")
-	var quip string
 	r, err := quipdb.NewQuipRepo()
 	if err != nil {
 		log.Println("Post job error", err.Error())
 		return
 	}
 	// check newquips, ignoring errors
-	// TakeNew() creates (and returns) a channel,
-	// waits for  a little while for message on that channel
-	// upon message reception, delete the quip
-	quip, c, _ := r.TakeNew()
+	// TakeNew() creates (and returns) a QuipBasket,
+	quip, _ := r.TakeNew()
 	// if we get nothing, grab a random one from the archive
-	if quip == "" {
+	if quip == nil {
 		log.Println("Nothing new under the sun")
 		quip, err = r.Quip()
 	}
-	t := twit.NewTwit()
 
+	t := twit.NewTwit()
 	if t == nil {
 		log.Println("Error creating twitter kit")
-	}
-	quip = quip + " #qotd"
-	id, err := t.Tweet(quip)
-	if err != nil {
-		log.Printf("Error tweeting quip %q (%d) %s", quip, id, err)
-		schedvars.Add("post-errors", 1)
-		lastErrMsg.Set(err.Error())
-		// truncated binary exponential backoff https://en.wikipedia.org/wiki/Exponential_backoff#Binary_exponential_backoff
-		if retries > 10 {
-			retries = 0
-			return
-		}
-		slot := math.Pow(2, float64(retries))
-		nBig, err := rand.Int(rand.Reader, big.NewInt(int64(slot)))
-    		if err != nil {
-			log.Printf(`¯\_(ツ)_/¯`)
-			// ¯\_(ツ)_/¯
-			return
-    		}
-    		n := nBig.Int64()
-		time.Sleep((time.Duration(n) * time.Second)/10)
-		retries++
-		post()
+		quip.Empty(false)
 		return
 	}
-	schedvars.Add("posts", 1)
-	if c != nil {
-		s, err := r.Add(quip)
+	tweet := quip.Quip() + " #qotd"
+	retries := 0
+	success := false;
+	for retries < 10 && !success {
+		id, err := t.Tweet(tweet)
 		if err != nil {
-			log.Printf("Error adding quip %s to archive %v", s, err)
-			return
+			log.Printf("Error tweeting quip %q (%d) %s", tweet, id, err)
+			schedvars.Add("post-errors", 1)
+			lastErrMsg.Set(err.Error())
+			// truncated binary exponential backoff https://en.wikipedia.org/wiki/Exponential_backoff#Binary_exponential_backoff
+			slot := math.Pow(2, float64(retries))
+			nBig, err := rand.Int(rand.Reader, big.NewInt(int64(slot)))
+			if err != nil {
+				// there's really no recovering here. Give up
+				// ¯\_(ツ)_/¯
+				log.Printf("%s: %v",`¯\_(ツ)_/¯`, err)
+			}
+			n := nBig.Int64()
+			retries++;
+			time.Sleep((time.Duration(n) * time.Second) / 10)
+		} else {
+			success = true
 		}
-		// assuming we got here without error, tell the quipdb
-		// to cancel moving the quip back to the new list
-		c <- true
 	}
-	retries = 0
+	if success {
+		schedvars.Add("posts", 1)
+	}
+	quip.Empty(success)
+	return
 }
 
 func Schedule() {

@@ -61,7 +61,7 @@ func (q quipService) Get() (string, error) {
 	}
 	quipsServed.Add(1)
 	quipLatency.Observe(time.Since(begin).Seconds())
-	return quip, nil
+	return quip.Quip(), nil
 }
 
 func (q quipService) Count() (int64, error) {

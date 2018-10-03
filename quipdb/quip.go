@@ -1,9 +1,6 @@
 package quipdb
 
 import (
-	"log"
-	"time"
-
 	"github.com/cratermoon/quip/storage"
 )
 
@@ -13,37 +10,31 @@ type QuipRepo struct {
 }
 
 // Quip returns a single short, witty, quip from the archive
-func (q QuipRepo) Quip() (string, error) {
+func (q QuipRepo) Quip() (QuipBasket, error) {
 	resp, err := q.kit.DBSelectRandom("select text from `quips`")
 
 	if err != nil {
-		return "Experience tranquility", err
+		return kitQuip{
+			quip: "Experience tranquility",
+		}, err
 	}
 
-	return resp, nil
+	return kitQuip{
+		kit:  q.kit,
+		quip: resp,
+	}, nil
 }
 
 // TakeNew will remove and return the first quip in the new list
 // and add it to the archive
-func (q QuipRepo) TakeNew() (string, chan bool, error) {
+func (q QuipRepo) TakeNew() (QuipBasket, error) {
 	resp, err := q.kit.DBTakeFirst("text", "newquips")
 	if err != nil {
-		return resp, nil, err
+		return nil, err
 	}
-	cancel := make(chan bool)
-	go func() {
-		select {
-		case <-cancel:
-			close(cancel)
-			q.kit.DBAdd("text", resp, "quips")
-			log.Print("TakeNew done, quip moved to archive")
-		case <-time.After(1 * time.Second):
-			log.Print("TakeNew timed out, returning quip to new list")
-			// return it to the newquips bucket
-			q.kit.DBAdd("text", resp, "newquips")
-		}
-	}()
-	return resp, cancel, nil
+	nq := newQuip{}
+	nq.quip = resp
+	return nq, nil
 }
 
 // Count returns the number of quips available in the archive
