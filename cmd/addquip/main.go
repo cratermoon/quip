@@ -11,7 +11,7 @@ import (
 
 const (
 	attributeName string = "text"
-	maxQuipLength int    = 134
+	maxQuipLength int    = 274
 )
 
 var (
@@ -38,7 +38,7 @@ func main() {
 		return
 	}
 
-	if !*verbose {
+	if *verbose {
 		fmt.Printf("Posting a new quip (%s) at %v\n", *quip, time.Now().Format(time.Stamp))
 	}
 
